@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-piloteer-black text-white;
+  }
+  
+  body {
+    @apply font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-white text-piloteer-black rounded-md font-medium hover:bg-piloteer-gray transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-piloteer-surface text-white rounded-md font-medium hover:bg-piloteer-surface-hover transition-colors;
+  }
+  
+  .card {
+    @apply bg-piloteer-surface rounded-lg p-6 border border-piloteer-surface-hover;
+  }
+  
+  .evidence-label {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full inline-block;
+  }
+  
+  .evidence-validated {
+    @apply bg-piloteer-green/10 text-piloteer-green border border-piloteer-green/20;
+  }
+  
+  .evidence-supported {
+    @apply bg-blue-500/10 text-blue-400 border border-blue-500/20;
+  }
+  
+  .evidence-associated {
+    @apply bg-yellow-500/10 text-yellow-400 border border-yellow-500/20;
+  }
+  
+  .evidence-observed {
+    @apply bg-piloteer-gray/10 text-piloteer-gray border border-piloteer-gray/20;
+  }
+  
+  .momentum-gaining {
+    @apply text-piloteer-green;
+  }
+  
+  .momentum-holding {
+    @apply text-piloteer-gray;
+  }
+  
+  .momentum-losing {
+    @apply text-piloteer-red;
+  }
+}
