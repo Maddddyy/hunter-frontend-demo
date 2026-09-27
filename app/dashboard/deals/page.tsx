@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import DashboardNav from '@/components/DashboardNav';
+import LightDashboardLayout from '@/components/LightDashboardLayout';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import EvidenceBadge from '@/components/EvidenceBadge';
 import { mockDeals } from '@/lib/data/mockData';
@@ -26,164 +25,140 @@ export default function DealsPage() {
   }, {} as Record<string, typeof mockDeals>);
 
   return (
-    <div className="min-h-screen bg-piloteer-black">
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Deals</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode('momentum')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'momentum'
-                  ? 'bg-piloteer-surface text-white'
-                  : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-              }`}
-            >
-              Hunter Momentum
-            </button>
-            <button
-              onClick={() => setViewMode('stage')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'stage'
-                  ? 'bg-piloteer-surface text-white'
-                  : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-              }`}
-            >
-              CRM Stage
-            </button>
-          </div>
+    <LightDashboardLayout
+      title="Deals"
+      subtitle="Deal-level Momentum, patterns, history and evidence"
+      actions={
+        <div className="inline-flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('momentum')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              viewMode === 'momentum'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            By Momentum
+          </button>
+          <button
+            onClick={() => setViewMode('stage')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              viewMode === 'stage'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            By Stage
+          </button>
         </div>
-
+      }
+    >
+      <div className="p-8 max-w-7xl mx-auto">
         {viewMode === 'momentum' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <MomentumColumn
-              title="Needs Action"
-              deals={dealsByMomentum['needs-action']}
-              color="red"
-            />
-            <MomentumColumn
-              title="Losing Momentum"
-              deals={dealsByMomentum['losing']}
-              color="red"
-            />
-            <MomentumColumn
-              title="Moving"
-              deals={dealsByMomentum['gaining']}
-              color="green"
-            />
-            <MomentumColumn
-              title="Commitment Ready"
-              deals={dealsByMomentum['holding']}
-              color="gray"
-            />
+          <div className="space-y-8">
+            {Object.entries(dealsByMomentum).map(([category, deals]) => {
+              if (deals.length === 0) return null;
+              const categoryLabels: Record<string, { title: string; color: string }> = {
+                'needs-action': { title: 'Needs Action', color: 'red' },
+                'losing': { title: 'Losing Momentum', color: 'red' },
+                'gaining': { title: 'Gaining Momentum', color: 'emerald' },
+                'holding': { title: 'Holding', color: 'gray' }
+              };
+              const label = categoryLabels[category];
+              
+              return (
+                <div key={category}>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">{label.title}</h2>
+                  <div className="grid gap-4">
+                    {deals.map((deal) => (
+                      <div key={deal.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold text-lg text-gray-900">{deal.company.name}</h3>
+                            <div className="flex items-center gap-3 mt-2">
+                              <span className="text-sm text-gray-600">{deal.stage}</span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                ${(deal.value / 1000).toFixed(0)}K
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MomentumDisplay
+                              score={deal.momentum}
+                              direction={deal.momentumDirection}
+                            />
+                          </div>
+                        </div>
+                        
+                        {deal.primaryPattern && (
+                          <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                              Primary Pattern
+                            </div>
+                            <p className="text-sm text-gray-900">{deal.primaryPattern.pattern}</p>
+                          </div>
+                        )}
+                        
+                        {deal.needsAction && deal.actionReason && (
+                          <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 px-3 py-2 rounded-lg">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {deal.actionReason}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="space-y-8">
             {Object.entries(dealsByStage).map(([stage, deals]) => (
-              <StageColumn key={stage} title={stage} deals={deals} />
+              <div key={stage}>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 capitalize">
+                  {stage.replace('-', ' ')}
+                </h2>
+                <div className="grid gap-4">
+                  {deals.map((deal) => (
+                    <div key={deal.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg text-gray-900">{deal.company.name}</h3>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-sm font-semibold text-gray-900">
+                              ${(deal.value / 1000).toFixed(0)}K
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MomentumDisplay
+                            score={deal.momentum}
+                            direction={deal.momentumDirection}
+                          />
+                        </div>
+                      </div>
+                      
+                      {deal.primaryPattern && (
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                            Primary Pattern
+                          </div>
+                          <p className="text-sm text-gray-900">{deal.primaryPattern.pattern}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function MomentumColumn({
-  title,
-  deals,
-  color,
-}: {
-  title: string;
-  deals: typeof mockDeals;
-  color: 'red' | 'green' | 'gray';
-}) {
-  const colorClasses = {
-    red: 'border-piloteer-red/30 bg-piloteer-red/5',
-    green: 'border-piloteer-green/30 bg-piloteer-green/5',
-    gray: 'border-piloteer-surface-hover bg-piloteer-surface/30',
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold">{title}</h2>
-        <span className="text-sm text-piloteer-gray">{deals.length}</span>
-      </div>
-      <div className="space-y-3">
-        {deals.map((deal) => (
-          <DealCard key={deal.id} deal={deal} colorClass={colorClasses[color]} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StageColumn({ title, deals }: { title: string; deals: typeof mockDeals }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold capitalize">{title.replace('-', ' ')}</h2>
-        <span className="text-sm text-piloteer-gray">{deals.length}</span>
-      </div>
-      <div className="space-y-3">
-        {deals.map((deal) => (
-          <DealCard key={deal.id} deal={deal} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DealCard({ deal, colorClass = '' }: { deal: typeof mockDeals[0]; colorClass?: string }) {
-  return (
-    <div className={`card p-4 ${colorClass} hover:border-piloteer-surface-hover transition-colors`}>
-      <div className="space-y-2">
-        <div>
-          <h3 className="font-semibold text-sm mb-1">{deal.company.name}</h3>
-          <div className="text-xs text-piloteer-gray">
-            ${(deal.value / 1000).toFixed(0)}K
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <MomentumDisplay
-            score={deal.momentum}
-            direction={deal.momentumDirection}
-            size="sm"
-            showLabel={false}
-          />
-          <span className={`text-xs momentum-${deal.momentumDirection}`}>
-            {deal.momentumDirection.charAt(0).toUpperCase() + deal.momentumDirection.slice(1)}
-          </span>
-        </div>
-
-        {deal.primaryPattern && (
-          <div className="pt-2 border-t border-piloteer-surface-hover">
-            <div className="flex items-center gap-1 mb-1">
-              <EvidenceBadge level={deal.primaryPattern.evidence.level} />
-            </div>
-            <p className="text-xs text-piloteer-gray line-clamp-2">
-              {deal.primaryPattern.pattern}
-            </p>
-          </div>
-        )}
-
-        {deal.needsAction && (
-          <div className="pt-2 border-t border-piloteer-surface-hover">
-            <p className="text-xs font-medium text-piloteer-red">{deal.actionReason}</p>
-          </div>
-        )}
-
-        <Link
-          href={`/dashboard/deals/${deal.id}`}
-          className="text-xs text-piloteer-gray hover:text-white block pt-1"
-        >
-          View details →
-        </Link>
-      </div>
-    </div>
+    </LightDashboardLayout>
   );
 }

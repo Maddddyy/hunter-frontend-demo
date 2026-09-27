@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardNav from '@/components/DashboardNav';
-import MomentumDisplay from '@/components/MomentumDisplay';
-import PatternCard from '@/components/PatternCard';
+import LightDashboardLayout from '@/components/LightDashboardLayout';
 import { mockDeals, marketPatterns } from '@/lib/data/mockData';
 
 type ViewMode = 'teams' | 'sellers';
@@ -22,57 +20,80 @@ export default function CRODashboard() {
   const losingValue = losingDeals.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="min-h-screen bg-piloteer-black">
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">CRO Dashboard</h1>
-          <div className="text-sm text-piloteer-gray">Revenue Organization</div>
+    <LightDashboardLayout
+      title="CRO Dashboard"
+      subtitle="Revenue Momentum, organizational patterns, and system performance"
+      actions={
+        <div className="inline-flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('teams')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              viewMode === 'teams'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Teams
+          </button>
+          <button
+            onClick={() => setViewMode('sellers')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              viewMode === 'sellers'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Sellers
+          </button>
         </div>
-
+      }
+    >
+      <div className="p-8 max-w-7xl mx-auto space-y-12">
         {/* Revenue Momentum */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Revenue Momentum</h2>
-          <div className="card">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Revenue Momentum</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
                 <div>
-                  <div className="text-4xl font-bold mb-2">
-                    <MomentumDisplay
-                      score={Math.round(orgMomentum)}
-                      direction="gaining"
-                      size="lg"
-                    />
+                  <div className="text-4xl font-bold text-emerald-600 mb-2">
+                    Gaining +{Math.round(orgMomentum)}
                   </div>
-                  <p className="text-piloteer-gray">
+                  <p className="text-gray-600">
                     Organization's collective book is gaining momentum. Enterprise segment driving growth.
                   </p>
                 </div>
-
-                <div className="h-48 bg-piloteer-black rounded-lg flex items-center justify-center border border-piloteer-surface-hover">
-                  <div className="text-center text-piloteer-gray">
-                    <div className="text-sm">Revenue momentum trend by segment</div>
-                    <div className="text-xs mt-1">(chart visualization)</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <span className="text-sm font-medium text-gray-700">Gaining</span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      ${(gainingValue / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-sm text-gray-500">{gainingDeals.length} deals</div>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-2xl font-bold momentum-gaining">{gainingDeals.length}</div>
-                  <div className="text-xs text-piloteer-gray mb-1">Deals gaining</div>
-                  <div className="text-lg font-semibold">${(gainingValue / 1000).toFixed(0)}K</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-2xl font-bold momentum-holding">{holdingDeals.length}</div>
-                  <div className="text-xs text-piloteer-gray mb-1">Deals holding</div>
-                  <div className="text-lg font-semibold">${(holdingValue / 1000).toFixed(0)}K</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-2xl font-bold momentum-losing">{losingDeals.length}</div>
-                  <div className="text-xs text-piloteer-gray mb-1">Deals losing</div>
-                  <div className="text-lg font-semibold">${(losingValue / 1000).toFixed(0)}K</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">Holding</span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      ${(holdingValue / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-sm text-gray-500">{holdingDeals.length} deals</div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="text-sm font-medium text-gray-700">Losing</span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      ${(losingValue / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-sm text-gray-500">{losingDeals.length} deals</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -81,240 +102,137 @@ export default function CRODashboard() {
 
         {/* Where Revenue Is Moving */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Where Revenue Is Moving</h2>
-          
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setViewMode('teams')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'teams'
-                  ? 'bg-piloteer-surface text-white'
-                  : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-              }`}
-            >
-              Teams
-            </button>
-            <button
-              onClick={() => setViewMode('sellers')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'sellers'
-                  ? 'bg-piloteer-surface text-white'
-                  : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-              }`}
-            >
-              Sellers
-            </button>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+            Where Revenue Is Moving ({viewMode === 'teams' ? 'by Team' : 'by Seller'})
+          </h2>
+          <div className="grid gap-4">
+            {viewMode === 'teams' ? (
+              <>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Enterprise Team</h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-600">5 deals</span>
+                        <span className="text-sm text-gray-600">$1.2M</span>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Gaining +18
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Strong momentum across large deals; early objection-surfacing pattern spreading
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Commercial Team</h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-600">8 deals</span>
+                        <span className="text-sm text-gray-600">$780K</span>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">
+                      <div className="w-2 h-2 rounded-full bg-gray-500" />
+                      Holding +3
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Needs coaching on implementation objection handling
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">John Doe</h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-600">Enterprise Team</span>
+                        <span className="text-sm text-gray-600">3 deals · $450K</span>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Gaining +15
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Jane Smith</h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-600">Commercial Team</span>
+                        <span className="text-sm text-gray-600">2 deals · $320K</span>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Gaining +8
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
-          {viewMode === 'teams' ? (
-            <div className="space-y-4">
-              <div className="card">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold mb-2">Enterprise Team</h3>
-                    <MomentumDisplay score={22} direction="gaining" size="sm" />
-                  </div>
-                  <div className="text-right text-sm text-piloteer-gray">
-                    <div>$858K active pipeline</div>
-                    <div>9 deals</div>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    Primary driver
-                  </div>
-                  <p className="text-sm">
-                    Permission-based discovery technique spreading across team; buyer engagement up 2.8x
-                  </p>
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold mb-2">Mid-Market Team</h3>
-                    <MomentumDisplay score={4} direction="holding" size="sm" />
-                  </div>
-                  <div className="text-right text-sm text-piloteer-gray">
-                    <div>$412K active pipeline</div>
-                    <div>12 deals</div>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    Primary driver
-                  </div>
-                  <p className="text-sm">
-                    Steady activity; no major pattern shifts this period
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="card">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold mb-2">Sarah Mitchell</h3>
-                    <MomentumDisplay score={18} direction="gaining" size="sm" />
-                  </div>
-                  <div className="text-right text-sm text-piloteer-gray">
-                    <div>Enterprise Team</div>
-                    <div>$473K · 4 deals</div>
-                  </div>
-                </div>
-              </div>
-              <div className="card">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold mb-2">Michael Chen</h3>
-                    <MomentumDisplay score={-4} direction="holding" size="sm" />
-                  </div>
-                  <div className="text-right text-sm text-piloteer-gray">
-                    <div>Enterprise Team</div>
-                    <div>$385K · 5 deals</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </section>
 
         {/* Needs You */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Needs You</h2>
-          <div className="grid gap-6">
-            <div className="card">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">EU data residency blocking enterprise deals</h3>
-                  <div className="text-sm text-piloteer-gray">Systemic issue affecting multiple teams</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Needs You</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Scale the early-objection pattern to Commercial team
+            </h3>
+            <div className="space-y-3 text-sm mb-4">
+              <div>
+                <div className="font-medium text-gray-700">What Hunter sees</div>
+                <div className="text-gray-600">
+                  Enterprise reps using "What concerns do you have?" early in discovery see 3.2x more buyer objection sharing. Commercial team not using it yet.
                 </div>
-
-                <div>
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    What's happening
-                  </div>
-                  <p className="text-sm">
-                    EU data residency concerns stalling 3 enterprise deals ($268K pipeline). Pattern emerging: technical validation completes, then data sovereignty becomes deal-breaker. Competitors offering EU-hosted solutions.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    CRO action
-                  </div>
-                  <p className="text-sm text-piloteer-gray">
-                    Escalate to Product and Engineering for EU deployment option. Interim: Legal to draft data processing addendum for enterprise customers.
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-piloteer-surface-hover">
-                  <button className="btn-primary">Escalate to Product</button>
+              </div>
+              <div>
+                <div className="font-medium text-gray-700">Revenue impact</div>
+                <div className="text-gray-900">
+                  Could unlock $200K+ in stalled Commercial deals
                 </div>
               </div>
             </div>
-
-            <div className="card">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Scale permission-based discovery technique</h3>
-                  <div className="text-sm text-piloteer-gray">Winning pattern ready to scale</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    What's working
-                  </div>
-                  <p className="text-sm">
-                    Asking "What concerns do you have?" early in discovery increases buyer-specific objection sharing by 3.2x. Validated across 24 interactions. Currently used by 3 of 8 enterprise reps.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                    CRO action
-                  </div>
-                  <p className="text-sm text-piloteer-gray">
-                    Add to standard discovery playbook. Train remaining reps in next enablement session. Document for onboarding.
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-piloteer-surface-hover">
-                  <button className="btn-primary">Add to Playbook</button>
-                </div>
-              </div>
-            </div>
+            <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors">
+              Create team training
+            </button>
           </div>
         </section>
 
-        {/* Patterns Shaping Revenue */}
+        {/* Market Patterns */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Patterns Shaping Revenue</h2>
-          <div className="grid gap-6">
-            {marketPatterns.map((pattern) => (
-              <div key={pattern.id} className="card">
-                <PatternCard pattern={pattern} showAffectedDeals />
-                <div className="mt-4 pt-4 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-2">
-                    Organizational action
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Patterns Shaping Revenue</h2>
+          <div className="space-y-4">
+            {marketPatterns.slice(0, 3).map((pattern, idx) => (
+              <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="font-semibold text-gray-900 mb-2">{pattern.pattern}</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Affected: </span>
+                    <span className="text-gray-900">
+                      {pattern.affectedDeals} deals · ${(pattern.affectedValue || 0) / 1000}K
+                    </span>
                   </div>
-                  <p className="text-sm">
-                    Update positioning and messaging. Train all teams to lead with performance outcomes, not AI capabilities. Position Hunter as performance layer on existing stack, not replacement.
-                  </p>
+                  <div>
+                    <span className="font-medium text-gray-700">What to do: </span>
+                    <span className="text-gray-900 font-medium">{pattern.recommendedAction}</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
-
-        {/* Revenue Performance */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Revenue Performance and Hunter Impact</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card">
-              <h3 className="font-semibold mb-4">Performance Consistency</h3>
-              <div className="text-3xl font-bold momentum-gaining mb-2">+24%</div>
-              <p className="text-sm text-piloteer-gray">
-                Variance in seller performance decreased. More reps performing at top quartile level.
-              </p>
-              <div className="mt-3 pt-3 border-t border-piloteer-surface-hover text-xs text-piloteer-gray">
-                <EvidenceBadge level="supported" /> Based on 60-day momentum variance analysis
-              </div>
-            </div>
-
-            <div className="card">
-              <h3 className="font-semibold mb-4">Winning Pattern Adoption</h3>
-              <div className="text-3xl font-bold momentum-gaining mb-2">38%</div>
-              <p className="text-sm text-piloteer-gray">
-                of team now using validated permission-based discovery technique
-              </p>
-              <div className="mt-3 pt-3 border-t border-piloteer-surface-hover text-xs text-piloteer-gray">
-                <EvidenceBadge level="validated" /> Tracked across 89 discovery calls
-              </div>
-            </div>
-
-            <div className="card">
-              <h3 className="font-semibold mb-4">Deal Velocity</h3>
-              <div className="text-3xl font-bold momentum-gaining mb-2">-12 days</div>
-              <p className="text-sm text-piloteer-gray">
-                Average time from discovery to proposal when IT invited early
-              </p>
-              <div className="mt-3 pt-3 border-t border-piloteer-surface-hover text-xs text-piloteer-gray">
-                <EvidenceBadge level="validated" /> Compared to deals with late IT involvement
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
-    </div>
-  );
-}
-
-function EvidenceBadge({ level }: { level: string }) {
-  return (
-    <span className={`evidence-label evidence-${level}`}>
-      {level.charAt(0).toUpperCase() + level.slice(1)}
-    </span>
+    </LightDashboardLayout>
   );
 }

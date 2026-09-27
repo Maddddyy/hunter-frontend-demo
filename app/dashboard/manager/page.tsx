@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DashboardNav from '@/components/DashboardNav';
-import MomentumDisplay from '@/components/MomentumDisplay';
-import PatternCard from '@/components/PatternCard';
+import LightDashboardLayout from '@/components/LightDashboardLayout';
 import { mockDeals, sellerPatterns, buyerPatterns, marketPatterns } from '@/lib/data/mockData';
 
 export default function ManagerDashboard() {
@@ -21,54 +19,38 @@ export default function ManagerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-piloteer-black">
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Manager Dashboard</h1>
-          <div className="text-sm text-piloteer-gray">Your Team</div>
-        </div>
-
+    <LightDashboardLayout
+      title="Manager Dashboard"
+      subtitle="Team-level Momentum, patterns, and coaching opportunities"
+    >
+      <div className="p-8 max-w-7xl mx-auto space-y-12">
         {/* Team Book Momentum */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Team Book Momentum</h2>
-          <div className="card">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Team Book Momentum</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
                 <div>
-                  <div className="text-4xl font-bold mb-2">
-                    <MomentumDisplay
-                      score={Math.round(teamMomentum)}
-                      direction="gaining"
-                      size="lg"
-                    />
+                  <div className="text-4xl font-bold text-emerald-600 mb-2">
+                    Gaining +{Math.round(teamMomentum)}
                   </div>
-                  <p className="text-piloteer-gray">
+                  <p className="text-gray-600">
                     Team's collective book is gaining momentum. Enterprise deals progressing well.
                   </p>
                 </div>
-
-                <div className="h-48 bg-piloteer-black rounded-lg flex items-center justify-center border border-piloteer-surface-hover">
-                  <div className="text-center text-piloteer-gray">
-                    <div className="text-sm">Team momentum trend</div>
-                    <div className="text-xs mt-1">(chart visualization)</div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <span className="text-sm text-gray-700">{gainingDeals} gaining</span>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-gaining">{gainingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals gaining</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-holding">{holdingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals holding</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-losing">{losingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals losing</div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gray-400" />
+                    <span className="text-sm text-gray-700">{holdingDeals} holding</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-sm text-gray-700">{losingDeals} losing</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -77,159 +59,81 @@ export default function ManagerDashboard() {
 
         {/* Needs You */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Needs You</h2>
-          <div className="card">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Acme Europe deal stalling</h3>
-                <div className="flex items-center gap-2 mb-3">
-                  <MomentumDisplay score={-12} direction="losing" size="sm" />
-                  <span className="text-sm text-piloteer-gray">· $95K · Proposal</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                  What's happening
-                </div>
-                <p className="text-sm">
-                  EU data residency blocker unresolved for three weeks. Champion engagement declining. Rep responding to deployment questions with feature explanations instead of rollout examples.
-                </p>
-              </div>
-
-              <div>
-                <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                  Where to intervene
-                </div>
-                <p className="text-sm text-piloteer-gray">
-                  Coach rep on handling implementation concerns. Escalate data residency issue to Product team for EU solution.
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-piloteer-surface-hover">
-                <button className="btn-primary">Review with Rep</button>
-              </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Needs You</h2>
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-2">TechCorp - Seller needs deal support</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Security discussion stalling; your experience with similar objections could help close.
+              </p>
+              <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                Review deal & coach
+              </button>
             </div>
           </div>
         </section>
 
         {/* Each Seller's Book Momentum */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Each Seller's Book Momentum</h2>
-          <div className="space-y-4">
-            <div className="card">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold mb-2">Sarah Mitchell (AE)</h3>
-                  <MomentumDisplay score={18} direction="gaining" size="sm" />
-                </div>
-                <div className="text-right text-sm text-piloteer-gray">
-                  <div>4 active deals</div>
-                  <div>$473K pipeline</div>
-                </div>
-              </div>
-              <p className="text-sm text-piloteer-gray mt-3">
-                TechCorp and Globex both progressing. Strong permission-based discovery technique.
-              </p>
-            </div>
-
-            <div className="card">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold mb-2">Michael Chen (AE)</h3>
-                  <MomentumDisplay score={-4} direction="holding" size="sm" />
-                </div>
-                <div className="text-right text-sm text-piloteer-gray">
-                  <div>5 active deals</div>
-                  <div>$385K pipeline</div>
-                </div>
-              </div>
-              <p className="text-sm text-piloteer-gray mt-3">
-                Acme stalling on data residency. Needs coaching on converting feature explanations to deployment stories.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Patterns Shaping the Team's Deals */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Patterns Shaping the Team's Deals</h2>
-          
-          <div className="flex gap-2 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Each Seller's Book Momentum</h2>
+          <div className="grid gap-4">
             {[
-              { key: 'seller' as const, label: 'Seller' },
-              { key: 'buyer' as const, label: 'Buyer' },
-              { key: 'market' as const, label: 'Market' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-piloteer-surface text-white'
-                    : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid gap-6">
-            {patternsByTab[activeTab].map((pattern) => (
-              <div key={pattern.id} className="card">
-                <PatternCard pattern={pattern} showAffectedDeals />
-                <div className="mt-4 pt-4 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-2">
-                    Manager action
+              { name: 'John Doe', momentum: 15, deals: 3, value: 450000 },
+              { name: 'Jane Smith', momentum: 8, deals: 2, value: 320000 }
+            ].map((seller) => (
+              <div key={seller.name} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{seller.name}</h3>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-sm text-gray-600">{seller.deals} deals</span>
+                      <span className="text-sm text-gray-600">${(seller.value / 1000).toFixed(0)}K</span>
+                    </div>
                   </div>
-                  <p className="text-sm">
-                    {activeTab === 'seller'
-                      ? pattern.impact === 'progression'
-                        ? 'Reinforce with team; document as best practice'
-                        : 'Coach affected reps; provide deployment story templates'
-                      : 'Share with team in next enablement session'}
-                  </p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Gaining +{seller.momentum}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Team Performance */}
+        {/* Patterns */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Team Performance and Hunter Impact</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="font-semibold mb-4">What's Improving</h3>
-              <ul className="space-y-3">
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Permission-based discovery adoption</div>
-                  <div className="text-piloteer-gray">3 of 5 reps now using consistently; buyer sharing up 2.8x on average</div>
-                </li>
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Early IT involvement</div>
-                  <div className="text-piloteer-gray">Security conversations resolving 3 weeks faster</div>
-                </li>
-              </ul>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Patterns Shaping the Team's Deals</h2>
+            <div className="inline-flex bg-gray-100 rounded-lg p-1">
+              {(['seller', 'buyer', 'market'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors capitalize ${
+                    activeTab === tab
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-
-            <div className="card">
-              <h3 className="font-semibold mb-4">Needs Attention</h3>
-              <ul className="space-y-3">
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Implementation question handling</div>
-                  <div className="text-piloteer-gray">2 reps still answering with features instead of deployment examples</div>
-                </li>
-                <li className="text-sm">
-                  <div className="font-medium mb-1">EU data residency blockers</div>
-                  <div className="text-piloteer-gray">Recurring across 3 enterprise deals; needs Product escalation</div>
-                </li>
-              </ul>
-            </div>
+          </div>
+          <div className="space-y-4">
+            {patternsByTab[activeTab].slice(0, 2).map((pattern, idx) => (
+              <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="font-semibold text-gray-900 mb-2">{pattern.pattern}</h3>
+                <p className="text-sm text-gray-600 mb-3">{pattern.meaning}</p>
+                <div className="text-sm">
+                  <span className="font-medium text-gray-700">What to reinforce: </span>
+                  <span className="text-gray-900">{pattern.recommendedAction}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </div>
-    </div>
+    </LightDashboardLayout>
   );
 }
