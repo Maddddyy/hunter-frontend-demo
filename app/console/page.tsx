@@ -34,18 +34,20 @@ export default function ConsolePage() {
 
   if (mode === 'sensing') {
     return (
-      <div className="min-h-screen flex flex-col bg-piloteer-black-alt">
-        <nav className="border-b border-piloteer-surface px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <PiloteerLogo className="h-6" />
-            <div className="text-sm text-piloteer-gray">
+      <div className="min-h-screen flex flex-col bg-piloteer-plane">
+        <nav className="border-b border-piloteer-hair bg-gradient-to-b from-piloteer-black-alt to-piloteer-void px-6 py-3.5 flex items-center justify-between backdrop-blur-sm">
+          <div className="flex items-center gap-5">
+            <Link href="/console" onClick={() => setMode('default')}>
+              <PiloteerLogo className="h-6 opacity-90 hover:opacity-100 transition-opacity" />
+            </Link>
+            <div className="text-sm text-piloteer-metal font-mono">
               TechCorp Global · Sarah Chen, David Kim
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-piloteer-red animate-pulse" />
-              <span className="text-sm">Sensing</span>
+            <div className="flex items-center gap-2 bg-piloteer-signal-soft border border-piloteer-signal-line rounded-full px-3 py-1.5">
+              <div className="w-2 h-2 rounded-full bg-piloteer-signal animate-pulse" />
+              <span className="text-sm font-mono text-piloteer-signal">Sensing</span>
             </div>
             <button
               onClick={() => {
@@ -59,52 +61,51 @@ export default function ConsolePage() {
           </div>
         </nav>
 
-        <div className="flex-1 flex items-end justify-center p-8">
+        <div className="flex-1 flex items-end justify-center p-8 pb-16">
           <div className="max-w-xl w-full space-y-4">
-            {/* Live tip */}
-            <div className="card bg-piloteer-black border-2 border-piloteer-surface-hover">
-              <div className="flex items-start justify-between mb-3">
-                <div className="text-xs text-piloteer-gray uppercase tracking-wide">
-                  Pattern → Meaning → Move
+            <div className="card bg-piloteer-black border-piloteer-hair-2 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="eyebrow flex items-center gap-2">
+                  <span>Pattern</span>
+                  <span className="text-piloteer-hair-2">→</span>
+                  <span>Meaning</span>
+                  <span className="text-piloteer-hair-2">→</span>
+                  <span>Move</span>
                 </div>
-                <span className="text-xs text-piloteer-gray">
+                <span className="text-xs font-mono text-piloteer-mute">
                   {currentTip + 1} of {liveTips.length}
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-piloteer-gray mb-1">Pattern</div>
-                  <p className="text-sm">{liveTips[currentTip].pattern}</p>
+                  <div className="eyebrow mb-2">Pattern</div>
+                  <p className="text-sm text-piloteer-ink leading-relaxed">{liveTips[currentTip].pattern}</p>
                 </div>
                 <div>
-                  <div className="text-xs text-piloteer-gray mb-1">Meaning</div>
-                  <p className="text-sm text-piloteer-gray">{liveTips[currentTip].meaning}</p>
+                  <div className="eyebrow mb-2">Meaning</div>
+                  <p className="text-sm ctx leading-relaxed">{liveTips[currentTip].meaning}</p>
                 </div>
-                <div className="pt-2 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray mb-1">Move</div>
-                  <p className="text-sm font-medium">{liveTips[currentTip].move}</p>
+                <div className="pt-3 border-t border-piloteer-hair-2">
+                  <div className="eyebrow mb-2">Move</div>
+                  <p className="text-base font-semibold text-piloteer-ink leading-relaxed">{liveTips[currentTip].move}</p>
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-4 pt-4 border-t border-piloteer-surface-hover">
+              <div className="flex gap-2 mt-5 pt-4 border-t border-piloteer-hair">
                 <button
                   onClick={() => setCurrentTip((prev) => Math.min(prev + 1, liveTips.length - 1))}
-                  className="btn-secondary text-sm flex-1"
+                  className="btn-ghost text-sm flex-1"
                   disabled={currentTip === liveTips.length - 1}
                 >
                   Dismiss
                 </button>
-                <button className="btn-secondary text-sm px-3">
-                  <span className="text-piloteer-gray">👍</span>
-                </button>
-                <button className="btn-secondary text-sm px-3">
-                  <span className="text-piloteer-gray">👎</span>
-                </button>
+                <button className="btn-ghost text-sm px-4">👍</button>
+                <button className="btn-ghost text-sm px-4">👎</button>
               </div>
             </div>
 
-            <div className="text-xs text-center text-piloteer-gray">
+            <div className="text-xs text-center ctx font-mono">
               Tips are private. Only you see them during the call.
             </div>
           </div>
@@ -115,26 +116,26 @@ export default function ConsolePage() {
 
   if (mode === 'follow-through') {
     return (
-      <div className="min-h-screen flex flex-col">
-        <nav className="border-b border-piloteer-surface bg-piloteer-black-alt px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <div className="min-h-screen flex flex-col bg-piloteer-void">
+        <nav className="border-b border-piloteer-hair bg-piloteer-plane px-6 py-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
             <Link href="/console" onClick={() => setMode('default')}>
-              <PiloteerLogo className="h-8" />
+              <PiloteerLogo className="h-7" />
             </Link>
             <button
               onClick={() => setMode('default')}
-              className="text-sm text-piloteer-gray hover:text-white"
+              className="text-sm ctx hover:text-piloteer-ink font-mono"
             >
-              ← Back to Console
+              ← Console
             </button>
           </div>
         </nav>
 
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="max-w-3xl w-full space-y-6">
+        <div className="flex-1 p-8">
+          <div className="max-w-4xl mx-auto space-y-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Follow-Through</h1>
-              <p className="text-piloteer-gray">
+              <h1 className="text-4xl font-bold mb-3 interp">Follow-Through</h1>
+              <p className="ctx text-lg">
                 TechCorp Global · Sarah Chen, David Kim
               </p>
             </div>
@@ -144,22 +145,22 @@ export default function ConsolePage() {
               <textarea
                 rows={4}
                 defaultValue="Security review completed. David confirmed SOC 2 compliance requirements are met. Sarah expressed urgency driven by board timeline. Both ready to move to executive presentation."
-                className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
               />
             </div>
 
             <div className="card">
               <h3 className="font-semibold mb-4">Commitments made</h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <input
                   type="text"
                   defaultValue="Sarah to schedule executive presentation by end of week"
-                  className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                  className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
                 />
                 <input
                   type="text"
                   defaultValue="David to provide final written compliance sign-off"
-                  className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                  className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -170,7 +171,7 @@ export default function ConsolePage() {
                 rows={3}
                 placeholder="Concerns, objections, or obstacles that came up..."
                 defaultValue="Need to define pilot scope (full team vs subset) before executive presentation"
-                className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
               />
             </div>
 
@@ -179,7 +180,7 @@ export default function ConsolePage() {
               <textarea
                 rows={3}
                 defaultValue="Send executive briefing materials and rollout timeline options. Propose three pilot scope options with pros/cons."
-                className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
               />
             </div>
 
@@ -202,57 +203,54 @@ export default function ConsolePage() {
     const hunterRead = interaction.hunterRead!;
 
     return (
-      <div className="min-h-screen flex flex-col">
-        <nav className="border-b border-piloteer-surface bg-piloteer-black-alt px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <div className="min-h-screen flex flex-col bg-piloteer-void">
+        <nav className="border-b border-piloteer-hair bg-piloteer-plane px-6 py-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
             <Link href="/console" onClick={() => setMode('default')}>
-              <PiloteerLogo className="h-8" />
+              <PiloteerLogo className="h-7" />
             </Link>
             <button
               onClick={() => setMode('default')}
-              className="text-sm text-piloteer-gray hover:text-white"
+              className="text-sm ctx hover:text-piloteer-ink font-mono"
             >
-              ← Back to Console
+              ← Console
             </button>
           </div>
         </nav>
 
         <div className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-5xl mx-auto space-y-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Prepare for Call</h1>
-              <p className="text-piloteer-gray">
+              <h1 className="text-4xl font-bold mb-3 interp">Prep Sensing</h1>
+              <p className="ctx text-lg">
                 {interaction.company.name} · {new Date(interaction.date).toLocaleString()}
               </p>
             </div>
 
-            {/* Hunter's Read */}
-            <div className="card bg-piloteer-black border-2 border-piloteer-surface-hover">
-              <h2 className="text-xl font-semibold mb-4">Hunter's Read</h2>
+            <div className="card bg-piloteer-black border-2 border-piloteer-hair-2">
+              <h2 className="text-2xl font-bold mb-6">Hunter's Read</h2>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                    Current Momentum
-                  </div>
+                  <div className="eyebrow mb-3">Current Momentum</div>
                   <MomentumDisplay
                     score={hunterRead.currentMomentum}
                     direction={hunterRead.momentumDirection}
-                    size="md"
+                    size="lg"
                   />
                 </div>
 
                 <div>
-                  <div className="text-sm font-medium mb-2">What Changed</div>
-                  <p className="text-sm text-piloteer-gray">{hunterRead.whatChanged}</p>
+                  <div className="eyebrow mb-3">What Changed</div>
+                  <p className="ctx leading-relaxed">{hunterRead.whatChanged}</p>
                 </div>
 
                 <div>
-                  <div className="text-sm font-medium mb-2">What the Buyer Cares About</div>
-                  <ul className="space-y-1">
+                  <div className="eyebrow mb-3">What the Buyer Cares About</div>
+                  <ul className="space-y-2">
                     {hunterRead.buyerCaresAbout.map((item, idx) => (
-                      <li key={idx} className="text-sm text-piloteer-gray flex items-start gap-2">
-                        <span className="text-piloteer-gray/50 mt-0.5">·</span>
+                      <li key={idx} className="ctx leading-relaxed flex items-start gap-3">
+                        <span className="text-piloteer-verified mt-1">·</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -260,11 +258,11 @@ export default function ConsolePage() {
                 </div>
 
                 <div>
-                  <div className="text-sm font-medium mb-2">Unresolved</div>
-                  <ul className="space-y-1">
+                  <div className="eyebrow mb-3">Unresolved</div>
+                  <ul className="space-y-2">
                     {hunterRead.unresolved.map((item, idx) => (
-                      <li key={idx} className="text-sm text-piloteer-gray flex items-start gap-2">
-                        <span className="text-piloteer-red/50 mt-0.5">·</span>
+                      <li key={idx} className="ctx leading-relaxed flex items-start gap-3">
+                        <span className="text-piloteer-signal mt-1">·</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -272,13 +270,13 @@ export default function ConsolePage() {
                 </div>
 
                 {hunterRead.personalContext && hunterRead.personalContext.length > 0 && (
-                  <div className="pt-3 border-t border-piloteer-surface-hover">
-                    <div className="text-sm font-medium mb-2">Personal Context</div>
+                  <div className="pt-5 border-t border-piloteer-hair-2">
+                    <div className="eyebrow mb-3">Personal Context</div>
                     {hunterRead.personalContext.map((ctx, idx) => (
-                      <div key={idx} className="text-sm text-piloteer-gray mb-2">
-                        <p>{ctx.detail}</p>
-                        <p className="text-xs text-piloteer-gray/70 mt-1">
-                          {ctx.source === 'public-profile' ? 'Public profile' : 'Prior interaction'} · <button className="hover:text-white">Review</button>
+                      <div key={idx} className="text-sm ctx mb-3">
+                        <p className="leading-relaxed">{ctx.detail}</p>
+                        <p className="text-xs text-piloteer-mute mt-2 font-mono">
+                          {ctx.source === 'public-profile' ? 'Public profile' : 'Prior interaction'} · <button className="hover:text-piloteer-ink transition-colors">Review</button>
                         </p>
                       </div>
                     ))}
@@ -287,11 +285,10 @@ export default function ConsolePage() {
               </div>
             </div>
 
-            {/* Call details */}
             <div className="grid grid-cols-2 gap-6">
               <div className="card">
                 <h3 className="font-semibold mb-3">Call Type</h3>
-                <select className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2">
+                <select className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors">
                   <option>{interaction.callType}</option>
                   <option>Discovery</option>
                   <option>Demo</option>
@@ -301,7 +298,7 @@ export default function ConsolePage() {
 
               <div className="card">
                 <h3 className="font-semibold mb-3">Your Role</h3>
-                <select className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2">
+                <select className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors">
                   <option>{interaction.sellerRole}</option>
                   <option>Leading</option>
                   <option>Supporting</option>
@@ -311,47 +308,47 @@ export default function ConsolePage() {
             </div>
 
             <div className="card">
-              <h3 className="font-semibold mb-3">People Joining</h3>
+              <h3 className="font-semibold mb-4">People Joining</h3>
               <div className="grid grid-cols-2 gap-4">
                 {interaction.contacts.map((contact) => (
-                  <div key={contact.id} className="bg-piloteer-black p-3 rounded-md border border-piloteer-surface-hover">
-                    <div className="font-medium text-sm">{contact.name}</div>
-                    <div className="text-xs text-piloteer-gray">{contact.title}</div>
+                  <div key={contact.id} className="bg-piloteer-surface-2 p-4 rounded-xl border border-piloteer-hair">
+                    <div className="font-semibold text-sm text-piloteer-ink">{contact.name}</div>
+                    <div className="text-xs ctx mt-1">{contact.title}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="card">
-              <h3 className="font-semibold mb-3">Goal</h3>
+              <h3 className="font-semibold mb-4">Goal</h3>
               <textarea
                 rows={3}
                 defaultValue={interaction.goal}
                 placeholder="What needs to be true when this call ends?"
-                className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed"
               />
             </div>
 
             <div className="card">
-              <h3 className="font-semibold mb-3">Additional Context (Optional)</h3>
+              <h3 className="font-semibold mb-4">Additional Context (Optional)</h3>
               <textarea
                 rows={3}
                 placeholder="Anything Hunter can't retrieve: offline conversations, internal concerns, personal details..."
-                className="w-full bg-piloteer-black border border-piloteer-surface-hover rounded-md px-4 py-2"
+                className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed"
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => {
                   setSensingActive(true);
                   setMode('sensing');
                 }}
-                className="btn-primary flex-1"
+                className="btn-primary flex-1 py-3.5 text-base"
               >
                 Start Sensing
               </button>
-              <button className="btn-secondary">Save Prep</button>
+              <button className="btn-secondary py-3.5">Save Prep</button>
             </div>
           </div>
         </div>
@@ -359,84 +356,91 @@ export default function ConsolePage() {
     );
   }
 
-  // Default console view
+  // Default console view - compact chrome
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="border-b border-piloteer-surface bg-piloteer-black-alt px-6 py-3">
+    <div className="min-h-screen flex flex-col bg-piloteer-void">
+      <nav className="border-b border-piloteer-hair bg-gradient-to-b from-piloteer-black-alt to-piloteer-void px-6 py-3.5 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/">
-              <PiloteerLogo className="h-6" />
+              <PiloteerLogo className="h-6 opacity-90 hover:opacity-100 transition-opacity" />
             </Link>
-            <input
-              type="search"
-              placeholder="Search companies, contacts..."
-              className="bg-piloteer-surface border border-piloteer-surface-hover rounded-md px-4 py-1.5 text-sm w-64"
-            />
+            <div className="relative">
+              <input
+                type="search"
+                placeholder="Search"
+                className="bg-piloteer-surface border border-piloteer-hair rounded-lg px-4 py-2 text-sm w-56 text-piloteer-ink placeholder:text-piloteer-mute focus:border-piloteer-hair-2 focus:outline-none transition-colors"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button className="btn-secondary text-sm">Start Sensing ▾</button>
             <button className="btn-secondary text-sm px-3">+</button>
-            <button className="text-sm text-piloteer-gray hover:text-white">More</button>
+            <button className="text-sm ctx hover:text-piloteer-ink font-mono transition-colors">More</button>
           </div>
         </div>
       </nav>
 
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-4xl w-full space-y-8">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold">Console</h1>
-            <p className="text-piloteer-gray">Prepare for calls and sense during interactions</p>
+        <div className="max-w-5xl w-full space-y-10">
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl font-bold interp">Console</h1>
+            <p className="ctx text-lg">Prepare for calls and sense during interactions</p>
           </div>
 
-          <div className="grid gap-6">
+          <div className="space-y-4">
+            <div className="eyebrow mb-4">Today's Interactions</div>
+            
             <button
               onClick={() => setMode('prep')}
-              className="card hover:border-piloteer-surface-hover hover:bg-piloteer-surface/50 transition-all text-left"
+              className="w-full card hover:border-piloteer-hair-2 hover:bg-piloteer-surface-2/50 transition-all text-left group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-piloteer-green" />
-                    <span className="text-sm text-piloteer-gray">In 2 hours</span>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-piloteer-verified" />
+                    <span className="text-sm font-mono text-piloteer-mute">In 2 hours</span>
                   </div>
-                  <h3 className="text-lg font-semibold mb-1">{upcomingInteraction.company.name}</h3>
-                  <p className="text-sm text-piloteer-gray mb-3">
+                  <h3 className="text-xl font-bold mb-2 text-piloteer-ink">{upcomingInteraction.company.name}</h3>
+                  <p className="text-sm ctx mb-3">
                     {upcomingInteraction.contacts.map(c => c.name).join(', ')}
                   </p>
-                  <div className="inline-block bg-piloteer-green/10 text-piloteer-green text-xs px-2 py-1 rounded">
+                  <div className="inline-flex items-center gap-2 bg-piloteer-verified-soft text-piloteer-verified text-xs font-mono uppercase tracking-wider px-3 py-1.5 rounded-full border border-piloteer-verified-line">
                     Prepared
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium">Technical Validation</div>
-                  <div className="text-xs text-piloteer-gray mt-1">Leading</div>
+                  <div className="text-sm font-semibold text-piloteer-ink">Technical Validation</div>
+                  <div className="text-xs ctx mt-1.5">Leading</div>
+                  <div className="mt-4 text-xs font-mono uppercase tracking-wider ctx group-hover:text-piloteer-ink transition-colors">
+                    Open Prep →
+                  </div>
                 </div>
               </div>
             </button>
 
-            <div className="card opacity-50">
+            <div className="card opacity-60">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-piloteer-gray" />
-                    <span className="text-sm text-piloteer-gray">Tomorrow, 10:00 AM</span>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-piloteer-mute" />
+                    <span className="text-sm font-mono text-piloteer-mute">Tomorrow, 10:00 AM</span>
                   </div>
-                  <h3 className="text-lg font-semibold mb-1">Acme Europe</h3>
-                  <p className="text-sm text-piloteer-gray mb-3">Follow-on call</p>
-                  <div className="inline-block bg-piloteer-red/10 text-piloteer-red text-xs px-2 py-1 rounded">
+                  <h3 className="text-xl font-bold mb-2 text-piloteer-ink">Acme Europe</h3>
+                  <p className="text-sm ctx mb-3">Follow-on call</p>
+                  <div className="inline-flex items-center gap-2 bg-piloteer-signal-soft text-piloteer-signal text-xs font-mono uppercase tracking-wider px-3 py-1.5 rounded-full border border-piloteer-signal-line">
                     Needs Prep
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium">Proposal</div>
+                  <div className="text-sm font-semibold text-piloteer-ink">Proposal</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="text-center">
-            <Link href="/dashboard" className="text-sm text-piloteer-gray hover:text-white">
+          <div className="text-center pt-4">
+            <Link href="/dashboard" className="text-sm font-mono ctx hover:text-piloteer-ink transition-colors">
               Open Dashboard →
             </Link>
           </div>
