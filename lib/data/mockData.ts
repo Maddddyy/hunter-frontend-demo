@@ -364,20 +364,26 @@ export const performanceMetrics: PerformanceMetric = {
   momentumChanged: 18,
 };
 
-// Teach Hunter steps (for onboarding)
+// Teach Hunter steps (Sales Configuration from BUILD-BRIEF)
 export const teachSteps: TeachStep[] = [
-  { id: '1', title: 'How many products does your team sell?', completed: true },
-  { id: '2', title: 'Tell us about Hunter (Product 1)', completed: true },
-  { id: '3', title: 'Who buys Hunter?', completed: true },
-  { id: '4', title: 'Key signals that matter', completed: true },
-  { id: '5', title: 'Sales objectives for Hunter', completed: true },
-  { id: '6', title: 'What makes Hunter different?', completed: true },
-  { id: '7', title: 'Common objections', completed: true },
-  { id: '8', title: 'Competitive landscape', completed: false },
-  { id: '9', title: 'Market intelligence', completed: false },
-  { id: '10', title: 'Company profile', completed: false },
-  { id: '11', title: 'Deal stages', completed: false },
-  { id: '12', title: 'Sales framework', completed: false },
+  // Products group
+  { id: '1', title: 'How many products?', completed: true },
+  
+  // Per-product: Hunter
+  { id: '2', title: 'Product 1: About', completed: true },
+  { id: '3', title: 'Product 1: Personas', completed: true },
+  { id: '4', title: 'Product 1: Key Signals', completed: true },
+  { id: '5', title: 'Product 1: Key Objectives', completed: true },
+  { id: '6', title: 'Product 1: Differentiators', completed: true },
+  { id: '7', title: 'Product 1: Objections & Counters', completed: true },
+  { id: '8', title: 'Product 1: Competitive Landscape', completed: false },
+  { id: '9', title: 'Product 1: Market Info', completed: false },
+  
+  // Company
+  { id: '10', title: 'Company Overview', completed: false },
+  { id: '11', title: 'Deal Stages', completed: false },
+  { id: '12', title: 'Sales Framework', completed: false },
+  { id: '13', title: 'Integrations', completed: false },
 ];
 
 export const mockProductConfig: ProductConfig = {
