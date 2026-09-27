@@ -24,7 +24,7 @@ export default function SettingsPage() {
                   <span className="eyebrow mb-3 block">Name</span>
                   <input
                     type="text"
-                    defaultValue="Sarah Mitchell"
+                    defaultValue="Emma Dixon"
                     className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
                   />
                 </label>
@@ -34,7 +34,7 @@ export default function SettingsPage() {
                   <span className="eyebrow mb-3 block">Email</span>
                   <input
                     type="email"
-                    defaultValue="sarah@piloteer.ai"
+                    defaultValue="emma@piloteer.ai"
                     className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
                   />
                 </label>

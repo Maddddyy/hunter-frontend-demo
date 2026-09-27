@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { teachSteps } from '@/lib/data/mockData';
 
@@ -139,9 +140,9 @@ export default function TeachPage() {
                 </button>
                 
                 {currentStep === teachSteps.length - 1 ? (
-                  <button className="btn-primary py-3.5 px-6">
+                  <Link href="/console" className="btn-primary py-3.5 px-6">
                     Complete Setup →
-                  </button>
+                  </Link>
                 ) : (
                   <button onClick={handleNext} className="btn-primary py-3.5 px-6">
                     Continue →

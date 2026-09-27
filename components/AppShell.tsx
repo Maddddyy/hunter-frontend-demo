@@ -3,17 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import PiloteerLogo from './PiloteerLogo';
+import { NavIcons } from './icons';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Teach', href: '/teach', icon: '📚' },
-    { label: 'Console', href: '/console', icon: '🎯' },
-    { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { label: 'Reports', href: '/reports', icon: '📋' },
-    { label: 'Analytics', href: '/analytics', icon: '📈' },
-    { label: 'Settings', href: '/settings', icon: '⚙️' },
+    { label: 'Teach', href: '/teach', Icon: NavIcons.Teach },
+    { label: 'Console', href: '/console', Icon: NavIcons.Console },
+    { label: 'Dashboard', href: '/dashboard', Icon: NavIcons.Dashboard },
+    { label: 'Reports', href: '/reports', Icon: NavIcons.Reports },
+    { label: 'Analytics', href: '/analytics', Icon: NavIcons.Analytics },
+    { label: 'Settings', href: '/settings', Icon: NavIcons.Settings },
   ];
 
   const isActive = (href: string) => {
@@ -37,20 +38,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex-1 px-4 py-6 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
-                isActive(item.href)
-                  ? 'bg-piloteer-surface-3 text-piloteer-ink border border-piloteer-hair-2'
-                  : 'text-piloteer-metal hover:text-piloteer-ink hover:bg-piloteer-surface-2'
-              }`}
-            >
-              <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const Icon = item.Icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+                  isActive(item.href)
+                    ? 'bg-piloteer-surface-3 text-piloteer-ink border border-piloteer-hair-2'
+                    : 'text-piloteer-metal hover:text-piloteer-ink hover:bg-piloteer-surface-2'
+                }`}
+              >
+                <Icon />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="p-4 border-t border-piloteer-hair">
