@@ -19,25 +19,28 @@ type ConsoleMode = 'home' | 'prep' | 'review';
 
 const LIVE_TIPS = [
   {
+    pattern: 'Sarah mentioned "board timeline" twice in 90 seconds',
+    meaning: 'External urgency creating decision pressure',
+    move: 'Ask: "What does the board need to see to feel confident moving forward?"',
+    cat: 'Authority',
+    type: 'MOVE',
+    accent: '#E8A33D',
+  },
+  {
+    pattern: 'David shifted from asking compliance questions to implementation timeline',
+    meaning: 'Security concerns resolved; focus moved to deployment',
+    move: 'Acknowledge shift: "Sounds like security is good. What timeline works for rollout?"',
+    cat: 'Progression',
+    type: 'MOVE',
+    accent: '#5BC08D',
+  },
+  {
+    pattern: 'Sarah paused before answering adoption question',
+    meaning: 'Unspoken concern about team adoption',
+    move: 'Permission-based: "What concerns do you have about the team adopting this?"',
     cat: 'Trust',
     type: 'MOVE',
     accent: '#FF5C5C',
-    move: 'Stop pitching. Ask what\'s still on their mind.',
-    body: 'Their answers are getting shorter and the tone\'s gone careful while you keep talking.',
-  },
-  {
-    cat: 'Value',
-    type: 'MOVE',
-    accent: '#E8A33D',
-    move: 'Find the real blocker before you sell more.',
-    body: 'Every time you talk value they pull back to how hard switching looks — the worry is the change, not the value.',
-  },
-  {
-    cat: 'Authority',
-    type: 'AWARENESS',
-    accent: '#B7BABD',
-    move: 'Ask what the CFO needs to say yes.',
-    body: 'Mark has to sign off but hasn\'t shown up yet — get what he needs while you can.',
   },
 ];
 
@@ -77,11 +80,17 @@ export default function ConsolePage() {
         {sensing && (
           <div className="absolute left-20 top-32 w-[52vw] max-w-[720px] opacity-20 transition-opacity duration-600">
             <div className="grid grid-cols-2 gap-1 bg-piloteer-black p-1 rounded-2xl border border-piloteer-hair">
-              {['SK', 'MB', 'LG', 'ED'].map((initials, i) => (
-                <div key={i} className="aspect-video bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface rounded-xl flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-piloteer-surface-3 flex items-center justify-center font-bold text-lg">
-                    {initials}
+              {[
+                { initials: 'SC', name: 'Sarah Chen', bg: '#3a5a7a' },
+                { initials: 'DK', name: 'David Kim', bg: '#2f6e63' },
+                { initials: 'JP', name: 'James Park', bg: '#6b4e8c' },
+                { initials: 'ED', name: 'Emma Dixon', bg: '#3B5578' }
+              ].map((person, i) => (
+                <div key={i} className="aspect-video bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface rounded-xl flex items-center justify-center relative">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: person.bg }}>
+                    {person.initials}
                   </div>
+                  <div className="absolute bottom-2 left-2 text-[10px] font-mono text-piloteer-metal">{person.name}</div>
                 </div>
               ))}
             </div>
@@ -141,16 +150,26 @@ export default function ConsolePage() {
                             {LIVE_TIPS[tipIdx].type}
                           </span>
                         </div>
-                        <h3 className="text-lg font-bold font-disp text-piloteer-ink leading-tight mb-2">
-                          {LIVE_TIPS[tipIdx].move}
-                        </h3>
-                        <p className="text-sm text-piloteer-metal leading-relaxed">
-                          {LIVE_TIPS[tipIdx].body}
-                        </p>
-                        <div className="text-xs font-mono text-piloteer-mute mt-3">just now</div>
-                        <div className="flex gap-2 mt-3">
-                          <button className="btn-ghost text-xs px-3 py-1.5">Acted</button>
-                          <button className="btn-ghost text-xs px-3 py-1.5">Dismiss</button>
+                        
+                        <div className="space-y-3 mb-3">
+                          <div>
+                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Pattern</div>
+                            <p className="text-sm text-piloteer-ink leading-relaxed">{LIVE_TIPS[tipIdx].pattern}</p>
+                          </div>
+                          <div>
+                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Meaning</div>
+                            <p className="text-sm text-piloteer-metal leading-relaxed">{LIVE_TIPS[tipIdx].meaning}</p>
+                          </div>
+                          <div className="pt-2 border-t border-piloteer-hair">
+                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Move</div>
+                            <p className="text-base font-bold font-disp text-piloteer-ink leading-tight">{LIVE_TIPS[tipIdx].move}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs font-mono text-piloteer-mute">just now</div>
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-piloteer-hair">
+                          <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Acted</button>
+                          <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Dismiss</button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-piloteer-hair text-xs font-mono text-piloteer-mute">
