@@ -27,8 +27,8 @@ export default function SellerPerformanceDashboard() {
 
   return (
     <LightDashboardLayout
-      title="Performance"
-      subtitle="Where are your deals moving, why, what needs you, and how you're improving"
+      title="Hunter command center"
+      subtitle="See the pipeline, team behavior, and buyer signals in one place"
     >
       <div className="p-8 space-y-12 max-w-7xl mx-auto">
         {/* 1. Your Book's Momentum */}

@@ -20,8 +20,8 @@ export default function ManagerDashboard() {
 
   return (
     <LightDashboardLayout
-      title="Manager Dashboard"
-      subtitle="Team-level Momentum, patterns, and coaching opportunities"
+      title="Company sales analytics"
+      subtitle="Integrated performance, revenue movement, and forecast across the sales organization"
     >
       <div className="p-8 max-w-7xl mx-auto space-y-12">
         {/* Team Book Momentum */}

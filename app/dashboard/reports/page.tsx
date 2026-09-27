@@ -26,8 +26,8 @@ export default function DealsPage() {
 
   return (
     <LightDashboardLayout
-      title="Deals"
-      subtitle="Deal-level Momentum, patterns, history and evidence"
+      title="Reports"
+      subtitle="Every analyzed sales conversation, with behavioral evidence and next actions"
       actions={
         <div className="inline-flex bg-gray-100 rounded-lg p-1">
           <button
