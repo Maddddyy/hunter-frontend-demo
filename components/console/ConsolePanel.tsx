@@ -18,19 +18,11 @@ const EMBLEM = (
 interface ConsolePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  initialState?: Partial<ConsoleState>;
+  state: ConsoleState;
+  setState: (fn: (s: ConsoleState) => ConsoleState) => void;
 }
 
-export function ConsolePanel({ isOpen, onClose, initialState }: ConsolePanelProps) {
-  const [state, setState] = useState<ConsoleState>({
-    mode: 'home',
-    sensing: false,
-    elapsed: 0,
-    tipIdx: -1,
-    currentDeal: null,
-    role: null,
-    ...initialState
-  });
+export function ConsolePanel({ isOpen, onClose, state, setState }: ConsolePanelProps) {
 
   // Timer for sensing mode
   useEffect(() => {

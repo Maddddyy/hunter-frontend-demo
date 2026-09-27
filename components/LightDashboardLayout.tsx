@@ -76,7 +76,7 @@ export default function LightDashboardLayout({ children, title, subtitle, action
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
           <Link href="/" className="block">
-            <PiloteerLogo className="h-6" />
+            <PiloteerLogo className="h-6" variant="dark" />
           </Link>
         </div>
 
@@ -105,11 +105,11 @@ export default function LightDashboardLayout({ children, title, subtitle, action
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-              JD
+              EM
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">John Doe</div>
-              <div className="text-xs text-gray-500">Seller</div>
+              <div className="text-sm font-medium text-gray-900 truncate">Emma Dixon</div>
+              <div className="text-xs text-gray-500">Account Executive</div>
             </div>
           </div>
         </div>

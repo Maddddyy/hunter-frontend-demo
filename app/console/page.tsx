@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ConsolePanel } from '@/components/console/ConsolePanel';
+import type { ConsoleState } from '@/components/console/types';
 
 const EMBLEM = (
   <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
@@ -11,9 +12,30 @@ const EMBLEM = (
   </svg>
 );
 
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export default function ConsolePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [sensing, setSensing] = useState(false);
+  const [consoleState, setConsoleState] = useState<ConsoleState>({
+    mode: 'home',
+    sensing: false,
+    elapsed: 0,
+    tipIdx: -1,
+    currentDeal: null,
+    role: null
+  });
+
+  const handleStopSensing = () => {
+    setConsoleState(prev => ({
+      ...prev,
+      sensing: false,
+      mode: 'review'
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#15151d] via-[#0a0a0e] to-[#08080b] relative overflow-hidden">
@@ -28,7 +50,7 @@ export default function ConsolePage() {
       />
 
       {/* Faint call mock (only while sensing) */}
-      {sensing && (
+      {consoleState.sensing && (
         <div className="absolute left-[5vw] top-[16vh] w-[52vw] max-w-[720px] border border-white/6 rounded-2xl overflow-hidden opacity-20 transition-opacity duration-600">
           <div className="grid grid-cols-2 gap-1.5 bg-black p-1.5">
             {[
@@ -77,18 +99,24 @@ export default function ConsolePage() {
         
         {/* Anchor button */}
         <button 
-          onClick={() => setIsPanelOpen(!isPanelOpen)}
+          onClick={() => {
+            if (consoleState.sensing) {
+              handleStopSensing();
+            } else {
+              setIsPanelOpen(!isPanelOpen);
+            }
+          }}
           className={`flex items-center gap-2 border rounded-lg px-2 py-1 transition-all ${
-            sensing 
+            consoleState.sensing 
               ? 'border-[#ff5c5c]/30 bg-[#ff5c5c]/8'
               : 'border-[#34343f] bg-[#1c1c24]/90 hover:border-[#43434f] hover:bg-[#20202a]'
           }`}
         >
-          {sensing ? (
+          {consoleState.sensing ? (
             <>
               <div className="w-2.5 h-2.5 rounded-full bg-[#ff5c5c] animate-pulse" />
               <span className="font-mono text-xs text-[#ff5c5c] tabular-nums min-w-[42px]">
-                00:00
+                {formatTime(consoleState.elapsed)}
               </span>
               <span className="font-display font-semibold text-[11px] text-[#ff5c5c] border-l border-[#ff5c5c]/30 pl-2">
                 Stop
@@ -110,7 +138,8 @@ export default function ConsolePage() {
       <ConsolePanel 
         isOpen={isPanelOpen} 
         onClose={() => setIsPanelOpen(false)}
-        initialState={{ sensing }}
+        state={consoleState}
+        setState={setConsoleState}
       />
     </div>
   );
