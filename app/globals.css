@@ -4,33 +4,41 @@
 
 @layer base {
   html {
-    @apply bg-piloteer-black text-white;
+    @apply bg-piloteer-void text-piloteer-ink;
   }
   
   body {
     @apply font-sans antialiased;
   }
+  
+  ::selection {
+    @apply bg-piloteer-metal/25;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-white text-piloteer-black rounded-md font-medium hover:bg-piloteer-gray transition-colors;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-piloteer-ink text-piloteer-void rounded-lg font-semibold font-disp text-sm hover:bg-white transition-all border border-piloteer-ink;
   }
   
   .btn-secondary {
-    @apply px-4 py-2 bg-piloteer-surface text-white rounded-md font-medium hover:bg-piloteer-surface-hover transition-colors;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-piloteer-surface-2 text-piloteer-ink rounded-lg font-semibold font-disp text-sm hover:bg-piloteer-surface-3 transition-all border border-piloteer-hair-2;
+  }
+  
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-transparent text-piloteer-metal rounded-lg font-semibold font-disp text-sm hover:text-piloteer-ink transition-colors border border-transparent;
   }
   
   .card {
-    @apply bg-piloteer-surface rounded-lg p-6 border border-piloteer-surface-hover;
+    @apply bg-piloteer-surface rounded-2xl p-6 border border-piloteer-hair;
   }
   
   .evidence-label {
-    @apply text-xs font-medium px-2 py-0.5 rounded-full inline-block;
+    @apply text-xs font-mono font-medium px-2 py-0.5 rounded-full inline-block uppercase tracking-wide;
   }
   
   .evidence-validated {
-    @apply bg-piloteer-green/10 text-piloteer-green border border-piloteer-green/20;
+    @apply bg-piloteer-verified-soft text-piloteer-verified border border-piloteer-verified-line;
   }
   
   .evidence-supported {
@@ -38,22 +46,34 @@
   }
   
   .evidence-associated {
-    @apply bg-yellow-500/10 text-yellow-400 border border-yellow-500/20;
+    @apply bg-piloteer-watch-soft text-piloteer-watch border border-piloteer-watch-line;
   }
   
   .evidence-observed {
-    @apply bg-piloteer-gray/10 text-piloteer-gray border border-piloteer-gray/20;
+    @apply bg-piloteer-surface-3 text-piloteer-metal border border-piloteer-hair-2;
   }
   
   .momentum-gaining {
-    @apply text-piloteer-green;
+    @apply text-piloteer-verified;
   }
   
   .momentum-holding {
-    @apply text-piloteer-gray;
+    @apply text-piloteer-metal;
   }
   
   .momentum-losing {
-    @apply text-piloteer-red;
+    @apply text-piloteer-signal;
+  }
+  
+  .interp {
+    @apply font-disp font-bold text-piloteer-ink tracking-editorial leading-tight;
+  }
+  
+  .ctx {
+    @apply text-piloteer-metal;
+  }
+  
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-widest text-piloteer-mute;
   }
 }

@@ -1,9 +1,9 @@
 import { MomentumDirection } from '@/lib/types/domain';
 
 interface MomentumDisplayProps {
-  score: number; // -100 to 100
+  score: number;
   direction: MomentumDirection;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showLabel?: boolean;
 }
 
@@ -26,19 +26,20 @@ export default function MomentumDisplay({
   };
 
   const sizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-2xl font-semibold',
+    sm: 'text-base gap-2',
+    md: 'text-xl gap-3',
+    lg: 'text-3xl gap-4',
+    xl: 'text-4xl gap-4',
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-baseline ${sizeClasses[size]}`}>
       {showLabel && (
-        <span className={`font-medium ${directionStyles[direction]} ${sizeClasses[size]}`}>
+        <span className={`font-bold ${directionStyles[direction]}`}>
           {directionLabels[direction]}
         </span>
       )}
-      <span className={`text-piloteer-gray ${sizeClasses[size]}`}>
+      <span className="ctx font-mono font-semibold tabular-nums">
         {score > 0 ? '+' : ''}{score}
       </span>
     </div>

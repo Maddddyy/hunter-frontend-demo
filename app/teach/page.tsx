@@ -23,58 +23,61 @@ export default function TeachPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="border-b border-piloteer-surface bg-piloteer-black-alt px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-piloteer-void">
+      <nav className="border-b border-piloteer-hair bg-gradient-to-b from-piloteer-plane to-piloteer-void backdrop-blur-sm px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/">
-            <PiloteerLogo className="h-8" />
+            <PiloteerLogo className="h-7 opacity-90 hover:opacity-100 transition-opacity" />
           </Link>
-          <div className="text-sm text-piloteer-gray">
+          <div className="text-sm font-mono ctx uppercase tracking-wider">
             Step {currentStep + 1} of {totalSteps}
           </div>
         </div>
       </nav>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8">
-        <div className="max-w-2xl w-full space-y-8">
+        <div className="max-w-3xl w-full space-y-10">
           {/* Progress bar */}
-          <div className="space-y-2">
-            <div className="h-1 bg-piloteer-surface rounded-full overflow-hidden">
+          <div className="space-y-3">
+            <div className="h-2 bg-piloteer-surface-2 rounded-full overflow-hidden">
               <div
-                className="h-full bg-white transition-all duration-300"
+                className="h-full bg-piloteer-ink transition-all duration-500"
                 style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
               />
             </div>
-            <div className="text-xs text-piloteer-gray text-center">
+            <div className="text-xs font-mono ctx text-center uppercase tracking-wider">
               {teachSteps.filter(s => s.completed).length} of {totalSteps} completed
             </div>
           </div>
 
           {/* Step content */}
-          <div className="card min-h-[400px] flex flex-col">
-            <h2 className="text-2xl font-semibold mb-6">{step.title}</h2>
+          <div className="card border-piloteer-hair-2 min-h-[480px] flex flex-col">
+            <div className="mb-8">
+              <div className="eyebrow mb-3">Teach Hunter</div>
+              <h2 className="text-3xl font-bold interp">{step.title}</h2>
+            </div>
 
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-8">
               {renderStepContent(currentStep)}
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center pt-6 border-t border-piloteer-surface-hover mt-6">
+            <div className="flex justify-between items-center pt-8 border-t border-piloteer-hair mt-8">
               <button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                ← Previous
               </button>
               
               {currentStep === totalSteps - 1 ? (
-                <Link href="/console" className="btn-primary">
-                  Complete & Open Console
+                <Link href="/console" className="btn-primary py-3.5 px-6">
+                  Complete & Open Console →
                 </Link>
               ) : (
-                <button onClick={handleNext} className="btn-primary">
-                  Continue
+                <button onClick={handleNext} className="btn-primary py-3.5 px-6">
+                  Continue →
                 </button>
               )}
             </div>
@@ -89,21 +92,21 @@ function renderStepContent(stepIndex: number) {
   switch (stepIndex) {
     case 0:
       return (
-        <div className="space-y-4">
-          <p className="text-piloteer-gray">
+        <div className="space-y-6">
+          <p className="text-lg ctx leading-relaxed">
             Let's start by understanding what your revenue team sells.
           </p>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <label className="block">
-              <span className="text-sm font-medium mb-2 block">Number of products</span>
-              <select className="w-full bg-piloteer-surface border border-piloteer-surface-hover rounded-md px-4 py-2">
+              <span className="eyebrow mb-3 block">Number of products</span>
+              <select className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors">
                 <option>1 product</option>
                 <option>2-3 products</option>
                 <option>4+ products</option>
               </select>
             </label>
           </div>
-          <div className="pt-4 text-sm text-piloteer-gray bg-piloteer-black p-4 rounded-md">
+          <div className="pt-6 text-sm ctx bg-piloteer-surface-2 p-6 rounded-xl border border-piloteer-hair leading-relaxed">
             We'll teach Hunter about each product one at a time. This helps Hunter understand what to listen for in your customer conversations.
           </div>
         </div>
