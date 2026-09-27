@@ -17,6 +17,20 @@
 }
 
 @layer components {
+  /* Console scrollbar */
+  .console-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .console-scroll::-webkit-scrollbar-thumb {
+    background: #34343f;
+    border-radius: 8px;
+  }
+  
+  .console-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-piloteer-ink text-piloteer-void rounded-lg font-semibold font-disp text-sm hover:bg-white transition-all border border-piloteer-ink;
   }

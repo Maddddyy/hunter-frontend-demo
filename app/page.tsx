@@ -61,18 +61,18 @@ export default function Home() {
             </Link>
 
             <Link 
-              href="/dashboard/manager"
+              href="/dashboard/reports"
               className="group relative bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface border border-piloteer-hair hover:border-piloteer-hair-2 rounded-2xl p-8 transition-all hover:transform hover:-translate-y-1"
             >
               <div className="space-y-3">
                 <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">
-                  For Managers
+                  For Sellers
                 </div>
                 <h3 className="text-xl font-bold text-piloteer-ink">
-                  Manager Dashboard
+                  Reports
                 </h3>
                 <p className="text-sm text-piloteer-metal leading-relaxed">
-                  Team book momentum, where to intervene, patterns across the team
+                  Every analyzed conversation with evidence and next actions
                 </p>
               </div>
               <div className="mt-6 text-xs font-mono uppercase tracking-wider text-piloteer-metal group-hover:text-piloteer-ink transition-colors">
@@ -81,18 +81,18 @@ export default function Home() {
             </Link>
 
             <Link 
-              href="/dashboard/cro"
+              href="/dashboard/analytics"
               className="group relative bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface border border-piloteer-hair hover:border-piloteer-hair-2 rounded-2xl p-8 transition-all hover:transform hover:-translate-y-1"
             >
               <div className="space-y-3">
                 <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">
-                  For Revenue Leaders
+                  For Teams
                 </div>
                 <h3 className="text-xl font-bold text-piloteer-ink">
-                  CRO Dashboard
+                  Analytics
                 </h3>
                 <p className="text-sm text-piloteer-metal leading-relaxed">
-                  Revenue momentum, systemic patterns, organizational actions
+                  Company sales analytics across the organization
                 </p>
               </div>
               <div className="mt-6 text-xs font-mono uppercase tracking-wider text-piloteer-metal group-hover:text-piloteer-ink transition-colors">

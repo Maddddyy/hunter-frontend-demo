@@ -1,23 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import DashboardNav from '@/components/DashboardNav';
-import MomentumDisplay from '@/components/MomentumDisplay';
-import PatternCard from '@/components/PatternCard';
-import {
-  mockDeals,
-  needsYouItems,
-  sellerPatterns,
-  buyerPatterns,
-  buyerSellerPatterns,
-  marketPatterns,
-  performanceMetrics,
-} from '@/lib/data/mockData';
+import LightDashboardLayout from '@/components/LightDashboardLayout';
+import { mockDeals, needsYouItems, sellerPatterns, buyerPatterns, buyerSellerPatterns, marketPatterns } from '@/lib/data/mockData';
 
 type PatternTab = 'seller' | 'buyer' | 'buyer-seller' | 'market';
 
-export default function SellerDashboard() {
+export default function SellerPerformanceDashboard() {
   const [activePatternTab, setActivePatternTab] = useState<PatternTab>('seller');
   const [needsYouIndex, setNeedsYouIndex] = useState(0);
 
@@ -33,229 +22,275 @@ export default function SellerDashboard() {
     market: marketPatterns,
   };
 
+  const currentPatterns = patternsByTab[activePatternTab];
   const currentNeedsYou = needsYouItems[needsYouIndex];
 
   return (
-    <div className="min-h-screen bg-piloteer-void">
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-8 py-12 space-y-16">
-        {/* Your Book's Momentum */}
+    <LightDashboardLayout
+      title="Hunter command center"
+      subtitle="See the pipeline, team behavior, and buyer signals in one place"
+    >
+      <div className="p-8 space-y-12 max-w-7xl mx-auto">
+        {/* 1. Your Book's Momentum */}
         <section>
-          <div className="mb-8">
-            <div className="eyebrow mb-3">Performance</div>
-            <h2 className="text-4xl font-bold interp">Your Book's Momentum</h2>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Your Book's Momentum</h2>
           
-          <div className="card bg-gradient-to-br from-piloteer-surface to-piloteer-black border-piloteer-hair-2">
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-10">
-              <div className="space-y-8">
-                <div>
-                  <div className="text-5xl font-bold mb-4">
-                    <MomentumDisplay
-                      score={Math.round(totalMomentum)}
-                      direction="gaining"
-                      size="xl"
-                    />
-                  </div>
-                  <p className="text-lg ctx leading-relaxed max-w-2xl">
-                    Your book is <span className="text-piloteer-verified font-semibold">gaining momentum</span>. 
-                    TechCorp moved to technical validation and Globex received proposal. 
-                    Implementation concerns surfacing in discovery phase.
-                  </p>
-                </div>
-
-                <div className="h-64 bg-piloteer-surface-2 rounded-xl flex items-center justify-center border border-piloteer-hair">
-                  <div className="text-center ctx">
-                    <div className="text-sm font-mono uppercase tracking-wider mb-1">Momentum trend over time</div>
-                    <div className="text-xs text-piloteer-mute">(visualization: momentum history with key events)</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-piloteer-black p-6 rounded-xl border border-piloteer-verified-line">
-                  <div className="text-4xl font-bold momentum-gaining mb-2">{gainingDeals}</div>
-                  <div className="text-sm font-mono uppercase tracking-wider text-piloteer-mute">Gaining</div>
-                  <div className="text-xs ctx mt-2">Moving forward with clear progression</div>
-                </div>
-                <div className="bg-piloteer-black p-6 rounded-xl border border-piloteer-hair-2">
-                  <div className="text-4xl font-bold momentum-holding mb-2">{holdingDeals}</div>
-                  <div className="text-sm font-mono uppercase tracking-wider text-piloteer-mute">Holding</div>
-                  <div className="text-xs ctx mt-2">Stable, awaiting next catalyst</div>
-                </div>
-                <div className="bg-piloteer-black p-6 rounded-xl border border-piloteer-signal-line">
-                  <div className="text-4xl font-bold momentum-losing mb-2">{losingDeals}</div>
-                  <div className="text-sm font-mono uppercase tracking-wider text-piloteer-mute">Losing</div>
-                  <div className="text-xs ctx mt-2">Requires attention to regain movement</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Needs You */}
-        <section>
-          <div className="mb-8">
-            <div className="eyebrow mb-3">Priority Actions</div>
-            <h2 className="text-4xl font-bold interp">Needs You</h2>
-          </div>
-          
-          <div className="card border-piloteer-hair-2 bg-gradient-to-br from-piloteer-surface to-piloteer-black">
-            <div className="flex items-center justify-between mb-8 pb-6 border-b border-piloteer-hair">
-              <div className="eyebrow">
-                Action {needsYouIndex + 1} of {needsYouItems.length}
-              </div>
-              {needsYouItems.length > 1 && (
-                <button className="text-sm font-mono ctx hover:text-piloteer-ink transition-colors uppercase tracking-wider">
-                  View all →
-                </button>
-              )}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-baseline gap-4 mb-6">
+              <div className="text-4xl font-bold text-emerald-600">Gaining</div>
+              <div className="text-lg text-gray-500">+{Math.round(totalMomentum)}</div>
             </div>
 
-            <div className="space-y-8">
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1">
-                  <h3 className="text-3xl font-bold mb-4 text-piloteer-ink">{currentNeedsYou.deal.company.name}</h3>
-                  <MomentumDisplay
-                    score={currentNeedsYou.deal.momentum}
-                    direction={currentNeedsYou.deal.momentumDirection}
-                    size="md"
+            <div className="flex items-center gap-6 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-sm text-gray-700">{gainingDeals} gaining</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                <span className="text-sm text-gray-700">{holdingDeals} holding</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="text-sm text-gray-700">{losingDeals} losing</span>
+              </div>
+            </div>
+
+            {/* Momentum trend line (simplified) */}
+            <div className="h-32 bg-gradient-to-t from-emerald-50 to-transparent rounded-lg mb-4 flex items-end">
+              <div className="w-full h-20 border-l-2 border-b-2 border-gray-200 relative">
+                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <polyline
+                    points="0,80 20,75 40,65 60,55 80,50 100,40"
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    vectorEffect="non-scaling-stroke"
                   />
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-mono ctx">${(currentNeedsYou.deal.value / 1000).toFixed(0)}K</div>
-                  <div className="text-sm font-mono text-piloteer-mute mt-1">{currentNeedsYou.deal.stage}</div>
-                </div>
+                  <polyline
+                    points="0,80 20,75 40,65 60,55 80,50 100,40"
+                    fill="url(#momentum-gradient)"
+                    opacity="0.1"
+                  />
+                  <defs>
+                    <linearGradient id="momentum-gradient" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.5"/>
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
+            </div>
 
-              <div className="grid gap-6">
-                <div>
-                  <div className="eyebrow mb-3">Why Hunter surfaced this</div>
-                  <p className="text-lg font-semibold text-piloteer-ink leading-relaxed">{currentNeedsYou.reason}</p>
-                </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              <strong className="font-semibold text-gray-900">Hunter sees:</strong> Three high-value deals advanced after you addressed buyer implementation concerns directly. TechCorp Global moved from stalled to active after you shifted from product features to their revenue operations pain.
+            </p>
+          </div>
+        </section>
 
-                <div>
-                  <div className="eyebrow mb-3">What Hunter sees</div>
-                  <p className="ctx leading-relaxed">{currentNeedsYou.whatHunterSees}</p>
-                </div>
+        {/* 2. Needs You */}
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Needs You</h2>
+          
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-sm text-gray-500">
+                {needsYouIndex + 1} of {needsYouItems.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setNeedsYouIndex(Math.max(0, needsYouIndex - 1))}
+                  disabled={needsYouIndex === 0}
+                  className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setNeedsYouIndex(Math.min(needsYouItems.length - 1, needsYouIndex + 1))}
+                  disabled={needsYouIndex === needsYouItems.length - 1}
+                  className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-                <div className="pt-6 border-t border-piloteer-hair">
-                  <div className="eyebrow mb-3">Recommended action</div>
-                  <p className="text-lg font-semibold text-piloteer-ink mb-6 leading-relaxed">{currentNeedsYou.recommendedAction}</p>
-                  <div className="flex gap-4">
-                    <Link href="/console" className="btn-primary py-3.5 px-6">
-                      {currentNeedsYou.type === 'follow-through' ? 'Review Follow-Up' : 'Open Prep'}
-                    </Link>
-                    {needsYouIndex < needsYouItems.length - 1 && (
-                      <button
-                        onClick={() => setNeedsYouIndex(needsYouIndex + 1)}
-                        className="btn-secondary py-3.5 px-6"
-                      >
-                        Next
-                      </button>
-                    )}
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-gray-900">{currentNeedsYou.deal.company.name}</h3>
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                      currentNeedsYou.deal.momentum > 0 
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : currentNeedsYou.deal.momentum < 0
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        currentNeedsYou.deal.momentum > 0 
+                          ? 'bg-emerald-500'
+                          : currentNeedsYou.deal.momentum < 0
+                          ? 'bg-red-500'
+                          : 'bg-gray-500'
+                      }`} />
+                      {currentNeedsYou.deal.momentum > 0 ? 'Gaining' : currentNeedsYou.deal.momentum < 0 ? 'Losing' : 'Holding'} {Math.abs(currentNeedsYou.deal.momentum)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <div className="font-medium text-gray-700">Why Hunter surfaced it</div>
+                      <div className="text-gray-600">{currentNeedsYou.reason}</div>
+                    </div>
+                    
+                    <div>
+                      <div className="font-medium text-gray-700">What Hunter sees</div>
+                      <div className="text-gray-600">{currentNeedsYou.whatHunterSees}</div>
+                    </div>
+                    
+                    <div>
+                      <div className="font-medium text-gray-700">What you should do</div>
+                      <div className="text-gray-900 font-medium">{currentNeedsYou.recommendedAction}</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Patterns Shaping Your Deals */}
-        <section>
-          <div className="mb-8">
-            <div className="eyebrow mb-3">Intelligence</div>
-            <h2 className="text-4xl font-bold interp">Patterns Shaping Your Deals</h2>
-          </div>
-          
-          <div className="inline-flex bg-piloteer-surface border border-piloteer-hair rounded-xl p-1 mb-8">
-            {[
-              { key: 'seller' as PatternTab, label: 'Seller' },
-              { key: 'buyer' as PatternTab, label: 'Buyer' },
-              { key: 'buyer-seller' as PatternTab, label: 'Buyer × Seller' },
-              { key: 'market' as PatternTab, label: 'Market' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePatternTab(tab.key)}
-                className={`px-5 py-2.5 rounded-lg text-sm font-semibold font-mono uppercase tracking-wider transition-all ${
-                  activePatternTab === tab.key
-                    ? 'bg-piloteer-surface-3 text-piloteer-ink'
-                    : 'text-piloteer-mute hover:text-piloteer-ink'
-                }`}
-              >
-                {tab.label}
+              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors">
+                {currentNeedsYou.recommendedAction}
               </button>
-            ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Patterns Shaping Your Deals */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Patterns Shaping Your Deals</h2>
+            
+            <div className="inline-flex bg-gray-100 rounded-lg p-1">
+              {([
+                ['seller', 'Seller'],
+                ['buyer', 'Buyer'],
+                ['buyer-seller', 'Buyer × Seller'],
+                ['market', 'Market']
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setActivePatternTab(key)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activePatternTab === key
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-6">
-            {patternsByTab[activePatternTab].map((pattern) => (
-              <PatternCard key={pattern.id} pattern={pattern} showAffectedDeals />
+          <div className="space-y-4">
+            {currentPatterns.map((pattern, idx) => (
+              <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-start gap-4">
+                  <div 
+                    className={`w-1 h-full rounded-full flex-shrink-0 ${
+                      pattern.impact === 'loss' || pattern.impact === 'stall' ? 'bg-red-500' :
+                      pattern.impact === 'engagement' ? 'bg-amber-500' :
+                      'bg-emerald-500'
+                    }`} 
+                    style={{ minHeight: '60px' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 mb-2">{pattern.pattern}</h3>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <div className="font-medium text-gray-700">What Hunter sees</div>
+                        <div className="text-gray-600">{pattern.meaning}</div>
+                      </div>
+                      
+                      <div>
+                        <div className="font-medium text-gray-700">Where Hunter sees it</div>
+                        <div className="text-gray-600">
+                          {pattern.evidence.details?.join(' • ') || `${pattern.evidence.interactions} interactions · ${pattern.evidence.level}`}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="font-medium text-gray-700">How it's affecting Momentum</div>
+                        <div className="text-gray-900">
+                          Impact: {pattern.impact} · {pattern.affectedDeals} deals · ${(pattern.affectedValue || 0) / 1000}K
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="font-medium text-gray-700">What you should do</div>
+                        <div className="text-gray-900 font-medium">{pattern.recommendedAction}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </section>
 
-        {/* My Performance */}
+        {/* 4. My Performance */}
         <section>
-          <div className="mb-8">
-            <div className="eyebrow mb-3">Learning</div>
-            <h2 className="text-4xl font-bold interp">My Performance</h2>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">My Performance</h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="card border-piloteer-hair-2">
-              <h3 className="text-xl font-bold mb-6">How Guidance Connects to Momentum</h3>
-              <div className="flex items-center justify-between py-10 px-2">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-piloteer-ink mb-2">{performanceMetrics.momentsIdentified}</div>
-                  <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">Moments<br/>identified</div>
-                </div>
-                <div className="text-piloteer-hair-2 text-xl">→</div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-piloteer-ink mb-2">{performanceMetrics.guidanceActioned}</div>
-                  <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">Guidance<br/>actioned</div>
-                </div>
-                <div className="text-piloteer-hair-2 text-xl">→</div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-piloteer-ink mb-2">{performanceMetrics.buyerResponsesChanged}</div>
-                  <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">Buyer responses<br/>changed</div>
-                </div>
-                <div className="text-piloteer-hair-2 text-xl">→</div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold momentum-gaining mb-2">+{performanceMetrics.momentumChanged}</div>
-                  <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">Momentum<br/>increased</div>
-                </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            {/* Flow diagram */}
+            <div className="flex items-center gap-3 mb-8 text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 font-medium text-blue-900">
+                77 moments identified
               </div>
-              <p className="text-xs ctx text-center pt-4 border-t border-piloteer-hair">
-                Shows momentum increased after guidance was actioned. Not claiming guidance caused the increase.
-              </p>
+              <div className="text-gray-400">→</div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 font-medium text-emerald-900">
+                54 guidance actioned
+              </div>
+              <div className="text-gray-400">→</div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 font-medium text-purple-900">
+                38 buyer responses changed
+              </div>
+              <div className="text-gray-400">→</div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 font-medium text-emerald-900">
+                Momentum +12
+              </div>
             </div>
 
-            <div className="card border-piloteer-hair-2 space-y-6">
-              <div>
-                <h4 className="font-bold mb-3 text-piloteer-ink">Where I'm Improving</h4>
-                <p className="ctx leading-relaxed">
-                  Permission-based questioning in discovery. Buyer sharing increased 3.2x when used.
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">Where I'm improving</h3>
+                <p className="text-sm text-gray-600">
+                  You're addressing buyer concerns earlier in conversations. Buyers are engaging more when you ask about constraints before presenting solutions.
                 </p>
               </div>
-              <div className="pt-4 border-t border-piloteer-hair">
-                <h4 className="font-bold mb-3 text-piloteer-watch">My Opportunity</h4>
-                <p className="ctx leading-relaxed">
-                  Responding to implementation questions with deployment examples vs feature explanations.
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">My opportunity</h3>
+                <p className="text-sm text-gray-600">
+                  You're still pitching features when buyers show hesitation. The pattern: buyer concern rises → you explain more → engagement falls.
                 </p>
               </div>
-              <div className="pt-4 border-t border-piloteer-hair">
-                <h4 className="font-bold mb-3 text-piloteer-ink">Next Focus</h4>
-                <p className="ctx leading-relaxed">
-                  When buyer asks "how does this work?", share customer rollout story instead of product walkthrough.
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">Next focus</h3>
+                <p className="text-sm text-gray-600 font-medium">
+                  When you notice a buyer pause or hedging language, ask: "What's your concern?" before adding more detail.
                 </p>
               </div>
             </div>
           </div>
         </section>
       </div>
-    </div>
+    </LightDashboardLayout>
   );
 }
