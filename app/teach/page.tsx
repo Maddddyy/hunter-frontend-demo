@@ -374,7 +374,7 @@ function renderStepContent(stepIndex: number) {
           <textarea
             rows={8}
             placeholder="What's happening in your market? What are buyers talking about?"
-            defaultValue="Enterprise buyers mention 'AI fatigue' and 'tool sprawl' in 60% of discovery calls. Market saturation concern requires differentiation as performance system, not another AI point solution."
+            defaultValue="Enterprise buyers frequently mention 'AI fatigue' and 'tool sprawl' concerns in discovery. Market saturation concern requires differentiation as performance system, not another AI point solution."
             className="w-full bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-xl px-4 py-3 text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed"
           />
         </div>
