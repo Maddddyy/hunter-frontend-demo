@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import EvidenceBadge from '@/components/EvidenceBadge';
 import { mockDeals } from '@/lib/data/mockData';
@@ -26,8 +26,8 @@ export default function DealsPage() {
   }, {} as Record<string, typeof mockDeals>);
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between">
@@ -88,7 +88,7 @@ export default function DealsPage() {
         )}
       </div>
       </div>
-    </AppShell>
+    </DashboardNav>
   );
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import PatternCard from '@/components/PatternCard';
 import { mockDeals, marketPatterns } from '@/lib/data/mockData';
@@ -22,8 +22,8 @@ export default function CRODashboard() {
   const losingValue = losingDeals.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between">
@@ -227,7 +227,8 @@ export default function CRODashboard() {
                     What's working
                   </div>
                   <p className="text-sm">
-                    Asking "What concerns do you have?" early in discovery increases buyer-specific objection sharing by 3.2x. Validated across 24 interactions. Currently used by 3 of 8 enterprise reps.
+                    <span className="text-xs font-mono text-piloteer-verified mr-1">[Supported]</span>
+                    Permission-based questioning across 24 interactions. TechCorp surfaced security concern in first call (typically week 3). Eight of nine recent deals where used: buyer shared unscripted concern. Currently used by 3 of 8 enterprise reps.
                   </p>
                 </div>
 
@@ -308,7 +309,7 @@ export default function CRODashboard() {
         </section>
       </div>
       </div>
-    </AppShell>
+    </DashboardNav>
   );
 }
 

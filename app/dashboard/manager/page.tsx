@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import PatternCard from '@/components/PatternCard';
 import { mockDeals, sellerPatterns, buyerPatterns, marketPatterns } from '@/lib/data/mockData';
@@ -21,8 +21,8 @@ export default function ManagerDashboard() {
   };
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between">
@@ -81,10 +81,10 @@ export default function ManagerDashboard() {
           <div className="card">
             <div className="space-y-4">
               <div>
-                <h3 className="text-xl font-semibold mb-2">Acme Europe deal stalling</h3>
+                <h3 className="text-xl font-semibold mb-2">EU data residency blocker across enterprise deals</h3>
                 <div className="flex items-center gap-2 mb-3">
                   <MomentumDisplay score={-12} direction="losing" size="sm" />
-                  <span className="text-sm text-piloteer-gray">· $95K · Proposal</span>
+                  <span className="text-sm text-piloteer-gray">· Acme Europe $95K · Proposal</span>
                 </div>
               </div>
 
@@ -93,7 +93,7 @@ export default function ManagerDashboard() {
                   What's happening
                 </div>
                 <p className="text-sm">
-                  EU data residency blocker unresolved for three weeks. Champion engagement declining. Rep responding to deployment questions with feature explanations instead of rollout examples.
+                  EU data residency blocker unresolved for three weeks across Acme Europe and two other enterprise deals. Champion engagement declining. Rep responding to deployment questions with feature explanations instead of rollout examples.
                 </p>
               </div>
 
@@ -129,7 +129,7 @@ export default function ManagerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-piloteer-gray mt-3">
-                TechCorp and Globex both progressing. Strong permission-based discovery technique.
+                TechCorp Global progressing well — security review completed ahead of schedule. Strong permission-based discovery technique driving buyer sharing.
               </p>
             </div>
 
@@ -145,7 +145,7 @@ export default function ManagerDashboard() {
                 </div>
               </div>
               <p className="text-sm text-piloteer-gray mt-3">
-                Acme stalling on data residency. Needs coaching on converting feature explanations to deployment stories.
+                Acme Europe and Midway Healthcare both stalling. Needs coaching on converting feature explanations to deployment stories. EU data residency recurring blocker.
               </p>
             </div>
           </div>
@@ -231,6 +231,6 @@ export default function ManagerDashboard() {
         </section>
       </div>
       </div>
-    </AppShell>
+    </DashboardNav>
   );
 }

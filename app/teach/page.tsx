@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import AppShell from '@/components/AppShell';
+import PiloteerLogo from '@/components/PiloteerLogo';
 import { teachSteps } from '@/lib/data/mockData';
 
 export default function TeachPage() {
@@ -22,13 +22,37 @@ export default function TeachPage() {
   };
 
   return (
-    <AppShell>
+    <div className="min-h-screen flex flex-col bg-piloteer-void">
+      {/* Teach Journey Header */}
+      <div className="border-b border-piloteer-hair bg-gradient-to-b from-piloteer-black-alt to-piloteer-plane">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <PiloteerLogo className="h-6 opacity-90" />
+              <span className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">Hunter</span>
+            </Link>
+            <div className="h-6 w-px bg-piloteer-hair" />
+            <div>
+              <div className="text-sm font-bold text-piloteer-ink">Teaching Hunter</div>
+              <div className="text-xs font-mono text-piloteer-mute">Revenue leader onboarding</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-xs font-mono text-piloteer-mute">
+              Step {currentStep + 1} of {teachSteps.length}
+            </div>
+            <Link href="/dashboard" className="text-xs font-semibold text-piloteer-metal hover:text-piloteer-ink transition-colors">
+              Exit to Dashboard →
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="flex-1 flex">
-        {/* Left Rail - Sales Configuration Steps */}
+        {/* Left Rail - Progress & Steps */}
         <aside className="w-80 border-r border-piloteer-hair bg-piloteer-black-alt overflow-y-auto">
           <div className="p-6">
             <div className="eyebrow mb-4">Sales Configuration</div>
-            <h2 className="text-xl font-bold interp mb-6">Teaching Hunter</h2>
             
             <div className="space-y-6">
               {/* Products Group */}
@@ -153,7 +177,7 @@ export default function TeachPage() {
           </div>
         </main>
       </div>
-    </AppShell>
+    </div>
   );
 }
 

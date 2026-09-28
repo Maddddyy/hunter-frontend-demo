@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AppShell from '@/components/AppShell';
+import Link from 'next/link';
 import { SearchIcon, PlusIcon, MoreIcon } from '@/components/icons';
 import EvidenceBadge from '@/components/EvidenceBadge';
 import MomentumDisplay from '@/components/MomentumDisplay';
@@ -44,11 +44,18 @@ const LIVE_TIPS = [
   },
 ];
 
+const TODAY_CALLS = [
+  { id: 'techcorp-1', time: '11:00', company: 'TechCorp Global', type: 'Technical validation', state: 'ready', goal: 'Get security sign-off confirmed in writing before presenting to board' },
+  { id: 'techcorp-2', time: '14:00', company: 'TechCorp Global', type: 'Follow-up', state: 'draft', goal: 'Security review completed — schedule board presentation' },
+];
+
 export default function ConsolePage() {
   const [mode, setMode] = useState<ConsoleMode>('home');
   const [sensing, setSensing] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [tipIdx, setTipIdx] = useState(-1);
+  const [sensingDropdownOpen, setSensingDropdownOpen] = useState(false);
+  const [calendarView, setCalendarView] = useState<'today' | 'tomorrow'>('today');
 
   useEffect(() => {
     if (!sensing) return;
@@ -67,186 +74,295 @@ export default function ConsolePage() {
   };
 
   return (
-    <AppShell>
-      <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-piloteer-void via-piloteer-black-alt to-piloteer-plane">
-        {/* Calm workspace background */}
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px)',
-          backgroundSize: '44px 44px',
-          maskImage: 'radial-gradient(120% 90% at 60% 40%, #000, transparent 90%)'
-        }} />
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-piloteer-void via-piloteer-black-alt to-piloteer-plane">
+      {/* Calm workspace background */}
+      <div className="absolute inset-0 opacity-30" style={{
+        backgroundImage: 'linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px)',
+        backgroundSize: '44px 44px',
+        maskImage: 'radial-gradient(120% 90% at 60% 40%, #000, transparent 90%)'
+      }} />
 
-        {/* Faint call mock when sensing */}
-        {sensing && (
-          <div className="absolute left-20 top-32 w-[52vw] max-w-[720px] opacity-20 transition-opacity duration-600">
-            <div className="grid grid-cols-2 gap-1 bg-piloteer-black p-1 rounded-2xl border border-piloteer-hair">
-              {[
-                { initials: 'SC', name: 'Sarah Chen', bg: '#3a5a7a' },
-                { initials: 'DK', name: 'David Kim', bg: '#2f6e63' },
-                { initials: 'JP', name: 'James Park', bg: '#6b4e8c' },
-                { initials: 'ED', name: 'Emma Dixon', bg: '#3B5578' }
-              ].map((person, i) => (
-                <div key={i} className="aspect-video bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface rounded-xl flex items-center justify-center relative">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: person.bg }}>
-                    {person.initials}
-                  </div>
-                  <div className="absolute bottom-2 left-2 text-[10px] font-mono text-piloteer-metal">{person.name}</div>
+      {/* Faint call mock when sensing */}
+      {sensing && (
+        <div className="absolute left-20 top-32 w-[52vw] max-w-[720px] opacity-20 transition-opacity duration-600 animate-in fade-in">
+          <div className="grid grid-cols-2 gap-1 bg-piloteer-black p-1 rounded-2xl border border-piloteer-hair">
+            {[
+              { initials: 'SC', name: 'Sarah Chen', bg: '#3a5a7a' },
+              { initials: 'DK', name: 'David Kim', bg: '#2f6e63' },
+              { initials: 'JP', name: 'James Park', bg: '#6b4e8c' },
+              { initials: 'ED', name: 'Emma Dixon', bg: '#3B5578' }
+            ].map((person, i) => (
+              <div key={i} className="aspect-video bg-gradient-to-br from-piloteer-surface-2 to-piloteer-surface rounded-xl flex items-center justify-center relative">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: person.bg }}>
+                  {person.initials}
                 </div>
-              ))}
-            </div>
-            <div className="h-9 bg-piloteer-black flex items-center justify-center gap-3 mt-1 rounded-b-2xl">
-              {[1,2,3].map(i => (
-                <div key={i} className="w-6 h-6 rounded-full bg-piloteer-surface-2" />
-              ))}
-              <div className="w-6 h-6 rounded-full bg-red-900/40" />
-            </div>
+                <div className="absolute bottom-2 left-2 text-[10px] font-mono text-piloteer-metal">{person.name}</div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Floating Console Panel */}
-        <div className="fixed top-10 right-4 w-[400px] z-40 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="bg-gradient-to-b from-piloteer-surface to-piloteer-black border border-piloteer-hair-2 rounded-2xl shadow-2xl overflow-hidden">
-            {/* Panel Header */}
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-piloteer-hair">
-              <div className="w-5 h-5">{EMBLEM}</div>
-              <div className="flex-1">
-                <div className="text-sm font-bold font-disp text-piloteer-ink">
-                  {sensing ? 'Live Guidance' : mode === 'prep' ? upcomingInteraction.company.name : 'Hunter'}
-                </div>
-                <div className="text-xs font-mono text-piloteer-mute">
-                  {sensing ? 'Sensing buyer & seller' : mode === 'prep' ? upcomingInteraction.callType : 'Prepare My Day'}
-                </div>
-              </div>
-              {sensing && (
-                <div className="flex items-center gap-2 bg-piloteer-signal-soft border border-piloteer-signal-line rounded-full px-2 py-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-piloteer-signal animate-pulse" />
-                  <span className="text-xs font-mono text-piloteer-signal">{formatTime(elapsed)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Panel Body */}
-            <div className="px-4 py-4 max-h-[70vh] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-              {sensing ? (
-                <>
-                  {tipIdx < 0 ? (
-                    <div className="py-10 text-center text-piloteer-mute">
-                      Hunter is sensing…
-                      <div className="flex justify-center gap-1 mt-3">
-                        {[0, 1, 2].map(i => (
-                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-piloteer-mute animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="border border-piloteer-hair-2 rounded-xl bg-piloteer-surface-2 p-4 relative overflow-hidden" style={{ borderLeftWidth: '3px', borderLeftColor: LIVE_TIPS[tipIdx].accent }}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs font-mono font-medium" style={{ color: LIVE_TIPS[tipIdx].accent }}>
-                            <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: LIVE_TIPS[tipIdx].accent }} />
-                            {LIVE_TIPS[tipIdx].cat}
-                          </span>
-                          <span className="ml-auto text-xs font-mono font-semibold tracking-wider" style={{ color: LIVE_TIPS[tipIdx].accent }}>
-                            {LIVE_TIPS[tipIdx].type}
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-3 mb-3">
-                          <div>
-                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Pattern</div>
-                            <p className="text-sm text-piloteer-ink leading-relaxed">{LIVE_TIPS[tipIdx].pattern}</p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Meaning</div>
-                            <p className="text-sm text-piloteer-metal leading-relaxed">{LIVE_TIPS[tipIdx].meaning}</p>
-                          </div>
-                          <div className="pt-2 border-t border-piloteer-hair">
-                            <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Move</div>
-                            <p className="text-base font-bold font-disp text-piloteer-ink leading-tight">{LIVE_TIPS[tipIdx].move}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="text-xs font-mono text-piloteer-mute">just now</div>
-                        <div className="flex gap-2 mt-3 pt-3 border-t border-piloteer-hair">
-                          <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Acted</button>
-                          <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Dismiss</button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-piloteer-hair text-xs font-mono text-piloteer-mute">
-                        <button 
-                          disabled={tipIdx <= 0}
-                          className="disabled:opacity-30"
-                        >
-                          ← Older
-                        </button>
-                        <span>{tipIdx + 1} / {LIVE_TIPS.length}</span>
-                        <button 
-                          disabled={tipIdx >= LIVE_TIPS.length - 1}
-                          className="disabled:opacity-30"
-                        >
-                          Newer →
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : mode === 'prep' ? (
-                <PrepView 
-                  interaction={upcomingInteraction} 
-                  onBack={() => setMode('home')}
-                  onStartSensing={() => setSensing(true)}
-                />
-              ) : mode === 'review' ? (
-                <ReviewView onBack={() => { setMode('home'); setSensing(false); }} />
-              ) : (
-                <HomeView onOpenPrep={() => setMode('prep')} />
-              )}
-            </div>
-
-            {/* Panel Toolbar */}
-            {!sensing && (
-              <div className="flex items-center gap-2 px-3 py-2.5 border-t border-piloteer-hair bg-piloteer-black/40">
-                <div className="flex-1 flex items-center gap-2 bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2">
-                  <SearchIcon />
-                  <input 
-                    placeholder="Search deal or contact…" 
-                    className="flex-1 bg-transparent border-none outline-none text-sm text-piloteer-ink placeholder:text-piloteer-mute"
-                  />
-                </div>
-                <button className="w-8 h-8 rounded-lg bg-piloteer-surface-2 border border-piloteer-hair flex items-center justify-center hover:bg-piloteer-surface-3 transition-colors">
-                  <PlusIcon />
-                </button>
-                <button className="w-8 h-8 rounded-lg bg-piloteer-surface-2 border border-piloteer-hair flex items-center justify-center hover:bg-piloteer-surface-3 transition-colors">
-                  <MoreIcon />
-                </button>
-              </div>
-            )}
-
-            {/* Sensing Controls */}
-            {sensing && (
-              <div className="flex items-center gap-3 px-3 py-2.5 border-t border-piloteer-hair bg-piloteer-black/40">
-                <button 
-                  onClick={() => { setSensing(false); setMode('review'); setElapsed(0); setTipIdx(-1); }}
-                  className="btn-secondary text-xs px-4 py-2"
-                >
-                  End Call
-                </button>
-                <div className="flex-1 text-xs font-mono text-piloteer-mute text-right">
-                  Cooldown active
-                </div>
-              </div>
-            )}
+          <div className="h-9 bg-piloteer-black flex items-center justify-center gap-3 mt-1 rounded-b-2xl">
+            {[1,2,3].map(i => (
+              <div key={i} className="w-6 h-6 rounded-full bg-piloteer-surface-2" />
+            ))}
+            <div className="w-6 h-6 rounded-full bg-red-900/40" />
           </div>
         </div>
+      )}
 
-        {/* Hint */}
-        {!sensing && (
-          <div className="fixed bottom-8 right-8 text-xs font-mono text-piloteer-mute/40 tracking-wider uppercase">
-            Piloteer runs beside whatever you're selling in
-          </div>
-        )}
+      {/* Console Menu Bar */}
+      <div className="fixed top-0 left-0 right-0 h-10 z-40 bg-piloteer-black/80 backdrop-blur-xl border-b border-piloteer-hair flex items-center px-4 gap-6">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <div className="w-4 h-4">{EMBLEM}</div>
+          <span className="text-xs font-bold font-disp text-piloteer-ink">Piloteer</span>
+        </Link>
+        <div className="flex-1 flex items-center gap-4 text-xs font-medium text-piloteer-metal">
+          <button className="hover:text-piloteer-ink transition-colors">File</button>
+          <button className="hover:text-piloteer-ink transition-colors">Session</button>
+          <button className="hover:text-piloteer-ink transition-colors">View</button>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link 
+            href="/dashboard"
+            className="flex items-center gap-2 px-2 py-1 bg-piloteer-surface-2 hover:bg-piloteer-surface-3 border border-piloteer-hair rounded-md text-xs font-semibold text-piloteer-ink transition-all"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span>Dashboards</span>
+          </Link>
+          <span className="text-xs font-mono text-piloteer-mute">9:41</span>
+        </div>
       </div>
-    </AppShell>
+
+      {/* Floating Console Panel */}
+      <div className="fixed top-14 right-4 w-[400px] z-40 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-gradient-to-b from-piloteer-surface to-piloteer-black border border-piloteer-hair-2 rounded-2xl shadow-2xl overflow-hidden">
+          {/* Panel Header */}
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-piloteer-hair">
+            <div className="w-5 h-5">{EMBLEM}</div>
+            <div className="flex-1">
+              <div className="text-sm font-bold font-disp text-piloteer-ink">
+                {sensing ? 'Live Guidance' : mode === 'prep' ? upcomingInteraction.company.name : 'Hunter'}
+              </div>
+              <div className="text-xs font-mono text-piloteer-mute">
+                {sensing ? 'Sensing buyer & seller' : mode === 'prep' ? upcomingInteraction.callType : 'Prepare My Day'}
+              </div>
+            </div>
+            {sensing && (
+              <div className="flex items-center gap-2 bg-piloteer-signal-soft border border-piloteer-signal-line rounded-full px-2 py-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-piloteer-signal animate-pulse" />
+                <span className="text-xs font-mono text-piloteer-signal">{formatTime(elapsed)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Panel Body */}
+          <div className="px-4 py-4 max-h-[70vh] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            {sensing ? (
+              <>
+                {tipIdx < 0 ? (
+                  <div className="py-10 text-center text-piloteer-mute">
+                    Hunter is sensing…
+                    <div className="flex justify-center gap-1 mt-3">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-piloteer-mute animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="border border-piloteer-hair-2 rounded-xl bg-piloteer-surface-2 p-4 relative overflow-hidden" style={{ borderLeftWidth: '3px', borderLeftColor: LIVE_TIPS[tipIdx].accent }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-mono font-medium" style={{ color: LIVE_TIPS[tipIdx].accent }}>
+                          <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: LIVE_TIPS[tipIdx].accent }} />
+                          {LIVE_TIPS[tipIdx].cat}
+                        </span>
+                        <span className="ml-auto text-xs font-mono font-semibold tracking-wider" style={{ color: LIVE_TIPS[tipIdx].accent }}>
+                          {LIVE_TIPS[tipIdx].type}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-3 mb-3">
+                        <div>
+                          <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Pattern</div>
+                          <p className="text-sm text-piloteer-ink leading-relaxed">{LIVE_TIPS[tipIdx].pattern}</p>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Meaning</div>
+                          <p className="text-sm text-piloteer-metal leading-relaxed">{LIVE_TIPS[tipIdx].meaning}</p>
+                        </div>
+                        <div className="pt-2 border-t border-piloteer-hair">
+                          <div className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute mb-1">Move</div>
+                          <p className="text-base font-bold font-disp text-piloteer-ink leading-tight">{LIVE_TIPS[tipIdx].move}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs font-mono text-piloteer-mute">just now</div>
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-piloteer-hair">
+                        <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Acted</button>
+                        <button className="btn-ghost text-xs px-3 py-1.5 flex-1">Dismiss</button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-piloteer-hair text-xs font-mono text-piloteer-mute">
+                      <button 
+                        disabled={tipIdx <= 0}
+                        className="disabled:opacity-30"
+                      >
+                        ← Older
+                      </button>
+                      <span>{tipIdx + 1} / {LIVE_TIPS.length}</span>
+                      <button 
+                        disabled={tipIdx >= LIVE_TIPS.length - 1}
+                        className="disabled:opacity-30"
+                      >
+                        Newer →
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : mode === 'prep' ? (
+              <PrepView 
+                interaction={upcomingInteraction} 
+                onBack={() => setMode('home')}
+                onStartSensing={() => setSensing(true)}
+              />
+            ) : mode === 'review' ? (
+              <ReviewView onBack={() => { setMode('home'); setSensing(false); }} />
+            ) : (
+              <HomeView onOpenPrep={() => setMode('prep')} />
+            )}
+          </div>
+
+          {/* Panel Toolbar */}
+          {!sensing && (
+            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-piloteer-hair bg-piloteer-black/40 relative">
+              <div className="flex-1 flex items-center gap-2 bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2">
+                <SearchIcon />
+                <input 
+                  placeholder="Search deal or contact…" 
+                  className="flex-1 bg-transparent border-none outline-none text-sm text-piloteer-ink placeholder:text-piloteer-mute"
+                />
+              </div>
+              
+              {/* Start Sensing Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setSensingDropdownOpen(!sensingDropdownOpen)}
+                  className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-piloteer-surface-2 border border-piloteer-hair hover:bg-piloteer-surface-3 transition-colors text-xs font-semibold text-piloteer-ink whitespace-nowrap"
+                >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-piloteer-signal" />
+                  <span>Start Sensing</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                
+                {sensingDropdownOpen && (
+                  <div className="absolute bottom-full right-0 mb-2 w-80 bg-gradient-to-b from-piloteer-surface to-piloteer-black border border-piloteer-hair-2 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="p-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <button
+                          onClick={() => setCalendarView('today')}
+                          className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${
+                            calendarView === 'today' 
+                              ? 'bg-piloteer-surface-3 text-piloteer-ink' 
+                              : 'text-piloteer-metal hover:text-piloteer-ink'
+                          }`}
+                        >
+                          Today
+                        </button>
+                        <button
+                          onClick={() => setCalendarView('tomorrow')}
+                          className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${
+                            calendarView === 'tomorrow' 
+                              ? 'bg-piloteer-surface-3 text-piloteer-ink' 
+                              : 'text-piloteer-metal hover:text-piloteer-ink'
+                          }`}
+                        >
+                          Tomorrow
+                        </button>
+                      </div>
+                      
+                      {calendarView === 'today' && (
+                        <div className="space-y-2">
+                          {TODAY_CALLS.map((call) => (
+                            <button
+                              key={call.id}
+                              onClick={() => {
+                                setSensingDropdownOpen(false);
+                                if (call.state === 'ready') {
+                                  setMode('prep');
+                                }
+                              }}
+                              className="w-full text-left border border-piloteer-hair bg-piloteer-surface-2 hover:bg-piloteer-surface-3 rounded-lg p-2.5 transition-all group"
+                            >
+                              <div className="flex items-center gap-2 text-xs font-mono text-piloteer-mute mb-1">
+                                <span>{call.time}</span>
+                                <span className={`px-2 py-0.5 ${
+                                  call.state === 'ready' 
+                                    ? 'bg-piloteer-verified-soft text-piloteer-verified border border-piloteer-verified-line' 
+                                    : 'bg-piloteer-surface-3 text-piloteer-mute border border-piloteer-hair'
+                                } rounded-full text-[10px] uppercase tracking-wider`}>
+                                  {call.state === 'ready' ? 'Prepared' : 'Draft'}
+                                </span>
+                              </div>
+                              <div className="text-sm font-semibold text-piloteer-ink mb-1">{call.company}</div>
+                              <div className="text-xs text-piloteer-metal">{call.type}</div>
+                              <div className="text-xs font-mono text-piloteer-mute group-hover:text-piloteer-ink transition-colors mt-1.5">
+                                {call.state === 'ready' ? '→ Start' : '→ Continue Prep'}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {calendarView === 'tomorrow' && (
+                        <div className="py-8 text-center">
+                          <div className="text-sm text-piloteer-mute">No calls scheduled</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <button className="w-8 h-8 rounded-lg bg-piloteer-surface-2 border border-piloteer-hair flex items-center justify-center hover:bg-piloteer-surface-3 transition-colors">
+                <PlusIcon />
+              </button>
+              <button className="w-8 h-8 rounded-lg bg-piloteer-surface-2 border border-piloteer-hair flex items-center justify-center hover:bg-piloteer-surface-3 transition-colors">
+                <MoreIcon />
+              </button>
+            </div>
+          )}
+
+          {/* Sensing Controls */}
+          {sensing && (
+            <div className="flex items-center gap-3 px-3 py-2.5 border-t border-piloteer-hair bg-piloteer-black/40">
+              <button 
+                onClick={() => { setSensing(false); setMode('review'); setElapsed(0); setTipIdx(-1); }}
+                className="btn-secondary text-xs px-4 py-2"
+              >
+                End Call
+              </button>
+              <div className="flex-1 text-xs font-mono text-piloteer-mute text-right">
+                Cooldown active
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hint */}
+      {!sensing && (
+        <div className="fixed bottom-8 right-8 text-xs font-mono text-piloteer-mute/40 tracking-wider uppercase">
+          Piloteer runs beside whatever you're selling in
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -283,8 +399,8 @@ function HomeView({ onOpenPrep }: { onOpenPrep: () => void }) {
               Needs Prep
             </span>
           </div>
-          <h4 className="font-semibold text-sm text-piloteer-ink mb-1">Acme Europe</h4>
-          <p className="text-xs text-piloteer-metal">Discovery · No objective set</p>
+          <h4 className="font-semibold text-sm text-piloteer-ink mb-1">TechCorp Global</h4>
+          <p className="text-xs text-piloteer-metal">Follow-up · Security review completed</p>
         </div>
       </div>
     </>
@@ -345,7 +461,7 @@ function PrepView({ interaction, onBack, onStartSensing }: any) {
         <div className="px-3 py-2 space-y-2">
           <div className="flex gap-2 py-2 text-xs">
             <span className="w-20 flex-none text-[9px] font-mono uppercase text-piloteer-mute">Move</span>
-            <span className="flex-1 text-piloteer-ink font-semibold">Surface the real blocker before talking price</span>
+            <span className="flex-1 text-piloteer-ink font-semibold">Get security sign-off confirmed in writing before presenting to board</span>
           </div>
         </div>
       </div>
@@ -390,7 +506,7 @@ function ReviewView({ onBack }: { onBack: () => void }) {
             <span className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute">Follow-up email</span>
             <span className="text-[9px] font-mono text-piloteer-verified">✓ Approved</span>
           </div>
-          <p className="text-xs text-piloteer-metal">Confirms Tuesday's next meeting and sends the rollout plan they asked for.</p>
+          <p className="text-xs text-piloteer-metal">Confirms Tuesday's board presentation and provides security sign-off documentation they requested.</p>
         </div>
 
         <div className="border border-piloteer-hair rounded-xl p-3 bg-piloteer-surface-2">
@@ -398,7 +514,7 @@ function ReviewView({ onBack }: { onBack: () => void }) {
             <span className="text-[9px] font-mono uppercase tracking-wider text-piloteer-mute">CRM update</span>
             <span className="text-[9px] font-mono text-piloteer-verified">✓ Approved</span>
           </div>
-          <p className="text-xs text-piloteer-metal">Keeps the stage where it is; logs their open worry, who signs, and Tuesday's meeting.</p>
+          <p className="text-xs text-piloteer-metal">Advances stage to executive presentation; logs confirmed security resolution and board timeline pressure.</p>
         </div>
       </div>
 

@@ -32,7 +32,7 @@ export default function Home() {
                   Open Hunter
                 </h3>
                 <p className="text-base text-piloteer-metal leading-relaxed">
-                  Start with Teach to configure your sales model, then access Console, Dashboard, Reports, Analytics, and Settings
+                  Start with Teach to configure your sales model, then access the Console companion for live selling and Performance dashboard for intelligence.
                 </p>
               </div>
               <div className="mt-6 text-sm font-mono uppercase tracking-wider text-piloteer-metal group-hover:text-piloteer-ink transition-colors">

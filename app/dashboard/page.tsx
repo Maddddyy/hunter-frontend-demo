@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import PatternCard from '@/components/PatternCard';
 import {
@@ -36,8 +36,8 @@ export default function SellerDashboard() {
   const currentNeedsYou = needsYouItems[needsYouIndex];
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-8 py-12 space-y-16">
         {/* Your Book's Momentum */}
@@ -60,15 +60,60 @@ export default function SellerDashboard() {
                   </div>
                   <p className="text-lg ctx leading-relaxed max-w-2xl">
                     Your book is <span className="text-piloteer-verified font-semibold">gaining momentum</span>. 
-                    TechCorp moved to technical validation and Globex received proposal. 
-                    Implementation concerns surfacing in discovery phase.
+                    TechCorp Global moved to technical validation after security review completed ahead of schedule.
+                    Implementation concerns shifting from technical feasibility to organizational change management — a progression signal.
                   </p>
                 </div>
 
-                <div className="h-64 bg-piloteer-surface-2 rounded-xl flex items-center justify-center border border-piloteer-hair">
-                  <div className="text-center ctx">
-                    <div className="text-sm font-mono uppercase tracking-wider mb-1">Momentum trend over time</div>
-                    <div className="text-xs text-piloteer-mute">(visualization: momentum history with key events)</div>
+                <div className="h-64 bg-piloteer-surface-2 rounded-xl border border-piloteer-hair p-6 relative overflow-hidden">
+                  {/* Simple momentum sparkline visualization */}
+                  <div className="absolute inset-0 p-6 flex flex-col">
+                    <div className="flex items-baseline justify-between mb-4">
+                      <span className="text-xs font-mono uppercase tracking-wider text-piloteer-mute">30-Day Momentum</span>
+                      <span className="text-xs font-mono text-piloteer-ink">+32 Today</span>
+                    </div>
+                    
+                    {/* Sparkline path */}
+                    <svg viewBox="0 0 400 120" className="flex-1" preserveAspectRatio="none">
+                      {/* Grid lines */}
+                      <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="4,4" />
+                      
+                      {/* Momentum path */}
+                      <path 
+                        d="M 0,80 L 40,75 L 80,70 L 120,68 L 160,55 L 200,50 L 240,48 L 280,42 L 320,38 L 360,32 L 400,28"
+                        fill="none"
+                        stroke="rgba(91,192,141,0.6)"
+                        strokeWidth="2"
+                      />
+                      
+                      {/* Gradient fill under line */}
+                      <defs>
+                        <linearGradient id="momentumGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="rgba(91,192,141,0.3)" />
+                          <stop offset="100%" stopColor="rgba(91,192,141,0.0)" />
+                        </linearGradient>
+                      </defs>
+                      <path 
+                        d="M 0,80 L 40,75 L 80,70 L 120,68 L 160,55 L 200,50 L 240,48 L 280,42 L 320,38 L 360,32 L 400,28 L 400,120 L 0,120 Z"
+                        fill="url(#momentumGradient)"
+                      />
+                      
+                      {/* Key event markers */}
+                      <circle cx="200" cy="50" r="3" fill="#5BC08D" />
+                      <circle cx="320" cy="38" r="3" fill="#5BC08D" />
+                    </svg>
+                    
+                    {/* Event annotations */}
+                    <div className="flex items-center justify-between mt-4 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-piloteer-verified" />
+                        <span className="font-mono text-piloteer-mute">Sep 13 · Security review completed</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-piloteer-verified" />
+                        <span className="font-mono text-piloteer-mute">Sep 25 · Board timeline mentioned</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -237,7 +282,7 @@ export default function SellerDashboard() {
               <div>
                 <h4 className="font-bold mb-3 text-piloteer-ink">Where I'm Improving</h4>
                 <p className="ctx leading-relaxed">
-                  Permission-based questioning in discovery. Buyer sharing increased 3.2x when used.
+                  Permission-based questioning in discovery. <span className="text-xs font-mono text-piloteer-verified ml-1">[Supported]</span> Buyer sharing increased when used across 24 interactions.
                 </p>
               </div>
               <div className="pt-4 border-t border-piloteer-hair">
@@ -257,6 +302,6 @@ export default function SellerDashboard() {
         </section>
       </div>
       </div>
-    </AppShell>
+    </DashboardNav>
   );
 }
