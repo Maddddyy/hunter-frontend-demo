@@ -4,6 +4,23 @@ export type EvidenceLevel = 'validated' | 'supported' | 'associated' | 'observed
 
 export type MomentumDirection = 'gaining' | 'holding' | 'losing';
 
+export type DriverId = 'velocity' | 'communication' | 'progression';
+
+export type DealOwnerId = 'emma' | 'noah';
+
+export type SegmentId = 'enterprise' | 'mid-market';
+
+export interface MomentumDriver {
+  id: DriverId;
+  points: number;
+  reason: string;
+}
+
+export interface DealPrompt {
+  q: string;
+  a: string;
+}
+
 export type PatternType = 'seller' | 'buyer' | 'buyer-seller' | 'market';
 
 export type PrepStatus = 'needs-prep' | 'draft' | 'prepared';
@@ -12,7 +29,7 @@ export type CallType = 'discovery' | 'technical-validation' | 'demo' | 'proposal
 
 export type SellerRole = 'leading' | 'supporting' | 'observing';
 
-export type DealStage = 'lead' | 'discovery' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
+export type DealStage = 'lead' | 'discovery' | 'technical-validation' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
 
 export interface Contact {
   id: string;
@@ -44,9 +61,15 @@ export interface Deal {
   company: Company;
   value: number;
   stage: DealStage;
-  momentum: number; // -100 to +100
+  momentum: number; // -100 to +100. Equals the sum of drivers.
   momentumDirection: MomentumDirection;
   momentumChangeLastWeek: number;
+  ownerId: DealOwnerId;
+  segment: SegmentId;
+  why: string;
+  history: number[];
+  drivers: MomentumDriver[];
+  prompts: DealPrompt[];
   primaryPattern?: Pattern;
   nextInteraction?: Interaction;
   needsAction: boolean;

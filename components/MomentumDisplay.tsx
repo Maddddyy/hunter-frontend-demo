@@ -1,3 +1,5 @@
+import { bandMeta, signed } from '@/lib/momentum';
+import { MomentumBar } from './MomentumVisuals';
 import { MomentumDirection } from '@/lib/types/domain';
 
 interface MomentumDisplayProps {
@@ -9,21 +11,11 @@ interface MomentumDisplayProps {
 
 export default function MomentumDisplay({
   score,
-  direction,
   size = 'md',
   showLabel = true,
 }: MomentumDisplayProps) {
-  const directionLabels: Record<MomentumDirection, string> = {
-    gaining: 'Gaining',
-    holding: 'Holding',
-    losing: 'Losing',
-  };
-
-  const directionStyles: Record<MomentumDirection, string> = {
-    gaining: 'momentum-gaining',
-    holding: 'momentum-holding',
-    losing: 'momentum-losing',
-  };
+  const band = bandMeta(score);
+  const tone = score > 10 ? 'text-piloteer-verified' : score < -10 ? 'text-piloteer-signal' : 'text-piloteer-metal';
 
   const sizeClasses = {
     sm: 'text-base gap-2',
@@ -33,15 +25,12 @@ export default function MomentumDisplay({
   };
 
   return (
-    <div className={`flex items-baseline ${sizeClasses[size]}`}>
-      {showLabel && (
-        <span className={`font-bold ${directionStyles[direction]}`}>
-          {directionLabels[direction]}
-        </span>
-      )}
-      <span className="ctx font-mono font-semibold tabular-nums">
-        {score > 0 ? '+' : ''}{score}
-      </span>
+    <div className="min-w-[140px]">
+      <div className={`flex items-baseline ${sizeClasses[size]}`}>
+        {showLabel && <span className={`font-bold ${tone}`}>{band.label}</span>}
+        <span className="ctx font-mono font-semibold tabular-nums">{signed(score)}</span>
+      </div>
+      <div className="mt-2"><MomentumBar value={score} /></div>
     </div>
   );
 }

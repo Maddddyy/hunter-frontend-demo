@@ -40,8 +40,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Montserrat', 'system-ui', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
+        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
         disp: ['Montserrat', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {

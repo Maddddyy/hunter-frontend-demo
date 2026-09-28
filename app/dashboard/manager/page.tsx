@@ -2,234 +2,136 @@
 
 import { useState } from 'react';
 import DashboardNav from '@/components/DashboardNav';
-import MomentumDisplay from '@/components/MomentumDisplay';
-import PatternCard from '@/components/PatternCard';
-import { mockDeals, sellerPatterns, buyerPatterns, marketPatterns } from '@/lib/data/mockData';
+import BookHero from '@/components/BookHero';
+import DealTable from '@/components/DealTable';
+import PatternBoard from '@/components/PatternBoard';
+import { MomentumBar, MomentumFigure, TrendChart } from '@/components/MomentumVisuals';
+import { mockDeals, sellers, sellerPatterns, buyerPatterns, marketPatterns } from '@/lib/data/mockData';
+import { useDealPane } from '@/lib/dealPane';
+import { bookNet, interpret, since } from '@/lib/momentum';
+import { Pattern } from '@/lib/types/domain';
 
 export default function ManagerDashboard() {
-  const [activeTab, setActiveTab] = useState<'seller' | 'buyer' | 'market'>('seller');
-
-  const teamMomentum = mockDeals.reduce((sum, deal) => sum + deal.momentum, 0) / mockDeals.length;
-  const gainingDeals = mockDeals.filter(d => d.momentumDirection === 'gaining').length;
-  const holdingDeals = mockDeals.filter(d => d.momentumDirection === 'holding').length;
-  const losingDeals = mockDeals.filter(d => d.momentumDirection === 'losing').length;
-
-  const patternsByTab = {
-    seller: sellerPatterns,
-    buyer: buyerPatterns,
-    market: marketPatterns,
-  };
+  const [sellerId, setSellerId] = useState<'all' | 'emma' | 'noah'>('all');
+  const [tab, setTab] = useState<'seller' | 'buyer' | 'market'>('seller');
+  const [focus, setFocus] = useState<'improving' | 'attention'>('attention');
+  const { openDeal } = useDealPane();
+  const visible = sellerId === 'all' ? mockDeals : mockDeals.filter((deal) => deal.ownerId === sellerId);
+  const attention = mockDeals.filter((deal) => deal.momentum < -10);
+  const patterns: Record<typeof tab, Pattern[]> = { seller: sellerPatterns, buyer: buyerPatterns, market: marketPatterns };
 
   return (
     <DashboardNav>
-      <div className="flex-1 bg-piloteer-void">
+      <div className="mx-auto max-w-6xl space-y-16 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <BookHero
+          eyebrow="Team"
+          kicker="The team book on the same axis as a single deal. It describes the deals, not the people."
+          deals={mockDeals}
+          compareNote="Hunter never ranks sellers against each other. Each book below is compared only with its own past."
+        />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Manager Dashboard</h1>
-          <div className="text-sm text-piloteer-gray">Your Team</div>
-        </div>
-
-        {/* Team Book Momentum */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Team Book Momentum</h2>
-          <div className="card">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div>
-                  <div className="text-4xl font-bold mb-2">
-                    <MomentumDisplay
-                      score={Math.round(teamMomentum)}
-                      direction="gaining"
-                      size="lg"
-                    />
+          <p className="eyebrow">Two books</p>
+          <h2 className="mt-2 text-3xl font-bold">Each seller, against their own trend.</h2>
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            {sellers.map((seller) => {
+              const deals = mockDeals.filter((deal) => deal.ownerId === seller.id);
+              const net = bookNet(deals);
+              const selected = sellerId === seller.id;
+              return (
+                <button
+                  key={seller.id}
+                  type="button"
+                  onClick={() => setSellerId(selected ? 'all' : seller.id)}
+                  className={`rounded-3xl border p-5 text-left ${selected ? 'border-piloteer-ink bg-piloteer-surface' : 'border-piloteer-hair bg-piloteer-surface/50'}`}
+                  aria-pressed={selected}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-piloteer-hair-2 bg-piloteer-surface-3 font-mono text-xs">{seller.initials}</span>
+                      <span>
+                        <span className="block font-semibold">{seller.name}</span>
+                        <span className="block text-xs text-piloteer-mute">{deals.length} active deals · {seller.role}</span>
+                      </span>
+                    </div>
+                    <span className="text-right">
+                      <MomentumFigure value={net.score} />
+                      <span className="mt-1 block text-xs text-piloteer-mute">{interpret(net.score, net.history)}</span>
+                    </span>
                   </div>
-                  <p className="text-piloteer-gray">
-                    Team's collective book is gaining momentum. Enterprise deals progressing well.
-                  </p>
-                </div>
+                  <div className="mt-4"><MomentumBar value={net.score} /></div>
+                  <div className="mt-4"><TrendChart values={net.history} caption={`${seller.name} ${since(net.history)}`} /></div>
+                  <p className="mt-3 text-sm text-piloteer-metal">{seller.focus} {since(net.history)}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-                <div className="h-48 bg-piloteer-black rounded-lg flex items-center justify-center border border-piloteer-surface-hover">
-                  <div className="text-center text-piloteer-gray">
-                    <div className="text-sm">Team momentum trend</div>
-                    <div className="text-xs mt-1">(chart visualization)</div>
+        <section>
+          <p className="eyebrow">Needs you</p>
+          <h2 className="mt-2 text-3xl font-bold">Where the book is losing ground.</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {attention.map((deal) => (
+              <button key={deal.id} type="button" onClick={() => openDeal(deal.id)} className="rounded-3xl border border-piloteer-hair bg-piloteer-surface p-5 text-left hover:bg-piloteer-surface-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{deal.company.name}</p>
+                    <p className="mt-1 text-xs text-piloteer-mute">{sellers.find((seller) => seller.id === deal.ownerId)?.name}</p>
                   </div>
+                  <MomentumFigure value={deal.momentum} />
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-gaining">{gainingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals gaining</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-holding">{holdingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals holding</div>
-                </div>
-                <div className="bg-piloteer-black p-4 rounded-lg border border-piloteer-surface-hover">
-                  <div className="text-3xl font-bold momentum-losing">{losingDeals}</div>
-                  <div className="text-sm text-piloteer-gray">Deals losing</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Needs You */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Needs You</h2>
-          <div className="card">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">EU data residency blocker across enterprise deals</h3>
-                <div className="flex items-center gap-2 mb-3">
-                  <MomentumDisplay score={-12} direction="losing" size="sm" />
-                  <span className="text-sm text-piloteer-gray">· Acme Europe $95K · Proposal</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                  What's happening
-                </div>
-                <p className="text-sm">
-                  EU data residency blocker unresolved for three weeks across Acme Europe and two other enterprise deals. Champion engagement declining. Rep responding to deployment questions with feature explanations instead of rollout examples.
-                </p>
-              </div>
-
-              <div>
-                <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-1">
-                  Where to intervene
-                </div>
-                <p className="text-sm text-piloteer-gray">
-                  Coach rep on handling implementation concerns. Escalate data residency issue to Product team for EU solution.
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-piloteer-surface-hover">
-                <button className="btn-primary">Review with Rep</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Each Seller's Book Momentum */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Each Seller's Book Momentum</h2>
-          <div className="space-y-4">
-            <div className="card">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold mb-2">Sarah Mitchell (AE)</h3>
-                  <MomentumDisplay score={18} direction="gaining" size="sm" />
-                </div>
-                <div className="text-right text-sm text-piloteer-gray">
-                  <div>4 active deals</div>
-                  <div>$473K pipeline</div>
-                </div>
-              </div>
-              <p className="text-sm text-piloteer-gray mt-3">
-                TechCorp Global progressing well — security review completed ahead of schedule. Strong permission-based discovery technique driving buyer sharing.
-              </p>
-            </div>
-
-            <div className="card">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold mb-2">Michael Chen (AE)</h3>
-                  <MomentumDisplay score={-4} direction="holding" size="sm" />
-                </div>
-                <div className="text-right text-sm text-piloteer-gray">
-                  <div>5 active deals</div>
-                  <div>$385K pipeline</div>
-                </div>
-              </div>
-              <p className="text-sm text-piloteer-gray mt-3">
-                Acme Europe and Midway Healthcare both stalling. Needs coaching on converting feature explanations to deployment stories. EU data residency recurring blocker.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Patterns Shaping the Team's Deals */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Patterns Shaping the Team's Deals</h2>
-          
-          <div className="flex gap-2 mb-6">
-            {[
-              { key: 'seller' as const, label: 'Seller' },
-              { key: 'buyer' as const, label: 'Buyer' },
-              { key: 'market' as const, label: 'Market' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-piloteer-surface text-white'
-                    : 'text-piloteer-gray hover:text-white hover:bg-piloteer-surface/50'
-                }`}
-              >
-                {tab.label}
+                <div className="mt-3"><MomentumBar value={deal.momentum} /></div>
+                <p className="mt-3 text-sm text-piloteer-metal">{deal.why}</p>
+                <p className="mt-2 text-sm font-semibold">{deal.actionReason}</p>
               </button>
             ))}
           </div>
+        </section>
 
-          <div className="grid gap-6">
-            {patternsByTab[activeTab].map((pattern) => (
-              <div key={pattern.id} className="card">
-                <PatternCard pattern={pattern} showAffectedDeals />
-                <div className="mt-4 pt-4 border-t border-piloteer-surface-hover">
-                  <div className="text-xs text-piloteer-gray uppercase tracking-wide mb-2">
-                    Manager action
-                  </div>
-                  <p className="text-sm">
-                    {activeTab === 'seller'
-                      ? pattern.impact === 'progression'
-                        ? 'Reinforce with team; document as best practice'
-                        : 'Coach affected reps; provide deployment story templates'
-                      : 'Share with team in next enablement session'}
-                  </p>
-                </div>
-              </div>
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow">Deals</p>
+              <h2 className="mt-2 text-3xl font-bold">{sellerId === 'all' ? 'The whole team' : sellers.find((seller) => seller.id === sellerId)?.name}</h2>
+            </div>
+            {sellerId !== 'all' && (
+              <button type="button" onClick={() => setSellerId('all')} className="text-sm font-semibold text-piloteer-metal">Show both books</button>
+            )}
+          </div>
+          <div className="mt-5"><DealTable deals={visible} /></div>
+        </section>
+
+        <section>
+          <p className="eyebrow">Patterns</p>
+          <h2 className="mt-2 text-3xl font-bold">What to reinforce, and what to coach.</h2>
+          <div className="mt-5 flex gap-2">
+            {([
+              ['seller', 'Seller'],
+              ['buyer', 'Buyer'],
+              ['market', 'Market'],
+            ] as const).map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setTab(key)} className={`rounded-full px-4 py-2 text-sm font-semibold ${tab === key ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-metal'}`}>
+                {label}
+              </button>
             ))}
           </div>
+          <div className="mt-5"><PatternBoard patterns={patterns[tab]} /></div>
         </section>
 
-        {/* Team Performance */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Team Performance and Hunter Impact</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="font-semibold mb-4">What's Improving</h3>
-              <ul className="space-y-3">
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Permission-based discovery adoption</div>
-                  <div className="text-piloteer-gray">3 of 5 reps now using consistently; buyer sharing up 2.8x on average</div>
-                </li>
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Early IT involvement</div>
-                  <div className="text-piloteer-gray">Security conversations resolving 3 weeks faster</div>
-                </li>
-              </ul>
-            </div>
-
-            <div className="card">
-              <h3 className="font-semibold mb-4">Needs Attention</h3>
-              <ul className="space-y-3">
-                <li className="text-sm">
-                  <div className="font-medium mb-1">Implementation question handling</div>
-                  <div className="text-piloteer-gray">2 reps still answering with features instead of deployment examples</div>
-                </li>
-                <li className="text-sm">
-                  <div className="font-medium mb-1">EU data residency blockers</div>
-                  <div className="text-piloteer-gray">Recurring across 3 enterprise deals; needs Product escalation</div>
-                </li>
-              </ul>
-            </div>
+          <p className="eyebrow">Team movement</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={() => setFocus('improving')} className={`rounded-3xl border p-5 text-left ${focus === 'improving' ? 'border-piloteer-verified bg-piloteer-verified-soft' : 'border-piloteer-hair'}`}>
+              <p className="font-semibold">Improving</p>
+              <p className="mt-2 text-sm text-piloteer-metal">Permission-based discovery is on the deals that are gaining. Security conversations that start early are closing faster.</p>
+            </button>
+            <button type="button" onClick={() => setFocus('attention')} className={`rounded-3xl border p-5 text-left ${focus === 'attention' ? 'border-piloteer-watch bg-piloteer-watch-soft' : 'border-piloteer-hair'}`}>
+              <p className="font-semibold">Needs a manager</p>
+              <p className="mt-2 text-sm text-piloteer-metal">Two deals are still getting feature answers to rollout questions. EU hosting is a product risk, not a coaching tip.</p>
+            </button>
           </div>
         </section>
-      </div>
       </div>
     </DashboardNav>
   );

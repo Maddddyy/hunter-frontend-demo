@@ -2,7 +2,7 @@
 
 import { useState, useReducer, useEffect } from 'react';
 import Link from 'next/link';
-import PiloteerLogo from '@/components/PiloteerLogo';
+import DashboardNav from '@/components/DashboardNav';
 import {
   TeachState,
   TeachStepId,
@@ -23,10 +23,16 @@ import {
   initialTeachState,
   frameworkDescriptions,
   stageTemplates,
+  blankProduct,
 } from '@/lib/data/teachData';
 
 type TeachAction =
-  | { type: 'SET_STEP'; step: number }
+  | { type: 'SET_STEP'; step: number; productIndex?: number }
+  | { type: 'SET_PRODUCT_COUNT'; count: number }
+  | { type: 'RENAME_PRODUCT'; productId: string; name: string }
+  | { type: 'ADD_CONTACT' }
+  | { type: 'UPDATE_CONTACT'; id: string; field: 'name' | 'role' | 'email'; value: string }
+  | { type: 'REMOVE_CONTACT'; id: string }
   | { type: 'UPDATE_COMPANY_OVERVIEW'; field: string; value: any }
   | { type: 'SET_DEAL_STAGES'; stages: DealStage[] }
   | { type: 'ADD_DEAL_STAGE' }
@@ -68,20 +74,67 @@ type TeachAction =
 
 function teachReducer(state: TeachState, action: TeachAction): TeachState {
   switch (action.type) {
-    case 'SET_STEP': {
-      // Derive activeProductIndex from step number
-      // Steps 0-2: org (no product)
-      // Steps 3-7: product 0
-      // Steps 8-12: product 1
-      // Steps 13+: finalize (no product)
-      let productIndex = state.activeProductIndex;
-      if (action.step >= 3 && action.step <= 7) {
-        productIndex = 0;
-      } else if (action.step >= 8 && action.step <= 12) {
-        productIndex = 1;
+    case 'SET_STEP':
+      return {
+        ...state,
+        currentStep: action.step,
+        activeProductIndex: action.productIndex ?? state.activeProductIndex,
+      };
+
+    case 'SET_PRODUCT_COUNT': {
+      const count = Math.min(6, Math.max(1, action.count));
+      const samples = state.products.filter((product) => product.sample);
+      const userProducts = state.products.filter((product) => !product.sample).slice(0, count);
+      while (userProducts.length < count) {
+        userProducts.push(blankProduct(`product-${userProducts.length + 1}`));
       }
-      return { ...state, currentStep: action.step, activeProductIndex: productIndex };
+      const products = [...samples, ...userProducts];
+      return {
+        ...state,
+        products,
+        activeProductIndex: Math.min(state.activeProductIndex, Math.max(0, products.length - 1)),
+      };
     }
+
+    case 'RENAME_PRODUCT':
+      return {
+        ...state,
+        products: state.products.map((p) =>
+          p.id === action.productId ? { ...p, name: action.name } : p
+        ),
+      };
+
+    case 'ADD_CONTACT':
+      return {
+        ...state,
+        companyOverview: {
+          ...state.companyOverview,
+          contacts: [
+            ...state.companyOverview.contacts,
+            { id: `contact-${Date.now()}`, name: '', role: '', email: '' },
+          ],
+        },
+      };
+
+    case 'UPDATE_CONTACT':
+      return {
+        ...state,
+        companyOverview: {
+          ...state.companyOverview,
+          contacts: state.companyOverview.contacts.map((contact) =>
+            contact.id === action.id ? { ...contact, [action.field]: action.value } : contact
+          ),
+        },
+      };
+
+    case 'REMOVE_CONTACT':
+      return {
+        ...state,
+        companyOverview: {
+          ...state.companyOverview,
+          contacts: state.companyOverview.contacts.filter((contact) => contact.id !== action.id),
+        },
+      };
     
     case 'UPDATE_COMPANY_OVERVIEW':
       return {
@@ -433,180 +486,41 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
       };
     
     case 'DRAFT_FROM_SOURCES': {
-      // Mock: Generate rich distinct content for the product from sources
-      const productIndex = state.products.findIndex(p => p.id === action.productId);
-      if (productIndex === -1) return state;
-
-      const product = state.products[productIndex];
-      const isCommander = product.id === 'commander';
-
-      // Generate distinct mock data based on product - always replace/add
-      const draftPersonas: Persona[] = isCommander
-        ? [
-            {
-              id: `p-${Date.now()}-1`,
-              name: 'Chief Revenue Officer',
-              role: 'Primary User / Economic Buyer',
-              notes: 'Owns revenue number and needs to know where the business is headed before it gets there. Cares about pipeline predictability, early warning signals, and where to focus limited attention. Asks about forecast accuracy improvement and executive dashboard clarity.',
-            },
-            {
-              id: `p-${Date.now()}-2`,
-              name: 'VP of Sales',
-              role: 'Primary User',
-              notes: 'Manages frontline sales managers and needs to know which deals and which reps need intervention. Values coaching efficiency and wants to spend time on highest-leverage activities. Concerned about creating more reporting overhead for managers.',
-            },
-          ]
-        : [
-            {
-              id: `p-${Date.now()}-1`,
-              name: 'Chief Revenue Officer',
-              role: 'Economic Buyer',
-              notes: 'Cares about predictable revenue growth and scaling best-seller behaviors across the team. Typically asks about ROI evidence, implementation timeline, and how this fits with existing sales tech stack. Concerned about adoption and proving value to board within first 90 days.',
-            },
-            {
-              id: `p-${Date.now()}-2`,
-              name: 'VP of Revenue Operations',
-              role: 'Champion / Technical Buyer',
-              notes: 'Owns the sales tech stack and process optimization. Values clean data, integration capabilities, and evidence-based coaching signals. Often burned by previous AI tools that promised insights but delivered noise.',
-            },
-          ];
-
-      const draftKeyQuestions: string[] = isCommander
-        ? [
-            'How do you currently know which deals need your attention?',
-            'What percentage of pipeline surprises could you have seen coming?',
-            'How much time do your sales managers spend in status meetings vs coaching?',
-          ]
-        : [
-            'What does success look like for your revenue team this quarter?',
-            'How do you currently know when a deal is gaining or losing momentum?',
-            'What happens when your best seller takes time off or leaves?',
-          ];
-
-      const draftKeyObjectives: string[] = isCommander
-        ? [
-            'Increase pipeline predictability and reduce forecast surprises',
-            'Identify intervention opportunities before deals slip',
-            'Focus coaching time on highest-impact activities',
-          ]
-        : [
-            'Increase deal velocity across the full pipeline',
-            'Scale best-seller behaviors to entire team',
-            'Reduce time to productivity for new reps',
-          ];
-
-      const draftDifferentiators: Differentiator[] = isCommander
-        ? [
-            {
-              id: `d-${Date.now()}-1`,
-              they: 'Dashboards showing lagging indicators and historical trends',
-              we: 'Real-time pattern detection and forward-looking momentum signals',
-            },
-            {
-              id: `d-${Date.now()}-2`,
-              they: 'Generic reports requiring manual interpretation',
-              we: 'Intelligent surfaces that tell you what needs attention and why',
-            },
-          ]
-        : [
-            {
-              id: `d-${Date.now()}-1`,
-              they: 'Record and analyze conversations after the call ends',
-              we: 'Provide real-time guidance while the buyer is still engaged',
-            },
-            {
-              id: `d-${Date.now()}-2`,
-              they: 'Create surveillance concerns with always-on recording',
-              we: 'Private seller guidance with no-monitor commitment',
-            },
-          ];
-
-      const draftObjections: Objection[] = isCommander
-        ? [
-            {
-              id: `o-${Date.now()}-1`,
-              objection: 'We already have Clari / Salesforce dashboards',
-              counter: "Commander doesn't replace Clari—it makes it more actionable. Clari shows forecast roll-ups and deal scores. Commander shows which deals need intervention right now and what pattern is causing the stall.",
-            },
-          ]
-        : [
-            {
-              id: `o-${Date.now()}-1`,
-              objection: 'How is this different from Gong or Chorus?',
-              counter: 'Gong records and analyzes after the call. Hunter guides during, while the conversation is happening. Think of Gong as the film room; Hunter is the coach on the sideline during the game.',
-            },
-          ];
-
-      const draftCompetitors: Competitor[] = isCommander
-        ? [
-            {
-              id: `c-${Date.now()}-1`,
-              name: 'Clari',
-              profile: 'Revenue operations platform focused on forecasting accuracy, pipeline management, and deal inspection. Strong in forecast roll-ups and executive reporting.',
-            },
-          ]
-        : [
-            {
-              id: `c-${Date.now()}-1`,
-              name: 'Gong',
-              profile: 'Market leader in conversation intelligence and revenue intelligence platform. Strong in post-call analysis, trend identification, and manager dashboards.',
-            },
-          ];
-
-      const draftBuyerEnvironment: MarketSignal[] = isCommander
-        ? [
-            { id: `be-${Date.now()}-1`, signal: 'Leadership team mentions being "surprised by deals slipping at the last minute"' },
-            { id: `be-${Date.now()}-2`, signal: 'Sales managers spending excessive time in pipeline review meetings' },
-            { id: `be-${Date.now()}-3`, signal: 'CRO mentions needing to "know where to focus" or "which deals need intervention"' },
-          ]
-        : [
-            { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool to tech stack' },
-            { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
-            { id: `be-${Date.now()}-3`, signal: 'Sales team resistance to being "watched" or recorded' },
-          ];
-
-      const draftCompanyEnvironment: MarketSignal[] = isCommander
-        ? [
-            { id: `cp-${Date.now()}-1`, signal: 'Frequent forecast misses or pipeline surprises quarter over quarter' },
-            { id: `cp-${Date.now()}-2`, signal: 'Leadership attention spread thin across too many deals' },
-            { id: `cp-${Date.now()}-3`, signal: 'Sales managers reactive to problems rather than proactive on opportunities' },
-          ]
-        : [
-            { id: `cp-${Date.now()}-1`, signal: 'Inconsistent rep performance—big gap between top and middle performers' },
-            { id: `cp-${Date.now()}-2`, signal: 'Long ramp time for new sellers (6+ months to productivity)' },
-            { id: `cp-${Date.now()}-3`, signal: 'Managers spending 10+ hours per week reviewing call recordings' },
-          ];
-
-      const draftDealSignals: MarketSignal[] = isCommander
-        ? [
-            { id: `de-${Date.now()}-1`, signal: 'CRO asks about forecast accuracy improvement with specific metrics' },
-            { id: `de-${Date.now()}-2`, signal: 'VP Sales mentions difficulty prioritizing coaching time across team' },
-            { id: `de-${Date.now()}-3`, signal: 'Sales leader asks "how is this different from Clari?"' },
-          ]
-        : [
-            { id: `de-${Date.now()}-1`, signal: 'Champion mentions board pressure or urgent timeline' },
-            { id: `de-${Date.now()}-2`, signal: 'Security asks detailed questions about data handling and privacy' },
-            { id: `de-${Date.now()}-3`, signal: 'Economic buyer asks for ROI evidence or customer references' },
-          ];
-
-      // Product-specific drafted descriptions
-      const draftDescription: string = isCommander
-        ? 'Revenue team performance platform that gives sales leaders real-time visibility into pipeline health, team patterns, and coaching opportunities. Commander aggregates signals from Hunter and your CRM to surface what needs your attention and where to intervene for maximum impact. Built for leaders who need to know which deals are stalling, which reps need coaching, and where small changes will create the biggest revenue outcomes.'
-        : 'Real-time sales performance system that provides private guidance during live customer interactions. Hunter helps every seller perform like your best sellers by whispering the next best move while the outcome can still change. Built on behavioral science, not surveillance—helping reps navigate complex buyer conversations without creating compliance or trust concerns.';
-
-      // Build the drafted product by replacing/merging content
-      const draftedProduct: ProductTeach = {
+      const product = state.products.find((item) => item.id === action.productId);
+      if (!product || product.sample) return state;
+      const name = product.name.trim() || 'This product';
+      const drafted: ProductTeach = {
         ...product,
-        description: draftDescription,
-        personas: draftPersonas,
-        keyQuestions: draftKeyQuestions,
-        keyObjectives: draftKeyObjectives,
-        differentiators: draftDifferentiators,
-        objections: draftObjections,
-        competitors: draftCompetitors,
-        buyerEnvironment: draftBuyerEnvironment,
-        companyProductEnvironment: draftCompanyEnvironment,
-        dealEnvironmentSignals: draftDealSignals,
+        description: product.description.trim() || `${name} helps the buyer finish the job they cannot finish with the tools they already have.`,
+        personas: product.personas.length > 0 ? product.personas : [
+          { id: `p-${product.id}-1`, name: 'Economic buyer', role: 'Owns the budget', notes: `Asks what changes if the team adopts ${name}.` },
+          { id: `p-${product.id}-2`, name: 'Champion', role: 'Runs the process', notes: `Needs ${name} to fit the way the team already sells.` },
+        ],
+        keyQuestions: product.keyQuestions.length > 0 ? product.keyQuestions : [
+          `Where does the current approach fail before ${name} shows up?`,
+          'What would have to be true for this to be worth switching?',
+        ],
+        keyObjectives: product.keyObjectives.length > 0 ? product.keyObjectives : [
+          `Make the outcome ${name} promises visible in the first cycle.`,
+        ],
+        differentiators: product.differentiators.length > 0 ? product.differentiators : [
+          { id: `d-${product.id}-1`, they: 'Add another report', we: `${name} tells the buyer the next move.` },
+        ],
+        objections: product.objections.length > 0 ? product.objections : [
+          { id: `o-${product.id}-1`, objection: 'We already have something for this.', counter: `${name} sits on top of that system and makes it actionable.` },
+        ],
+        competitors: product.competitors.length > 0 ? product.competitors : [
+          { id: `c-${product.id}-1`, name: 'The incumbent', profile: 'The tool the buyer already pays for and rarely replaces outright.' },
+        ],
+        buyerEnvironment: product.buyerEnvironment.length > 0 ? product.buyerEnvironment : [
+          { id: `be-${product.id}-1`, signal: 'The buyer describes the job in their own words before you name the product.' },
+        ],
+        companyProductEnvironment: product.companyProductEnvironment.length > 0 ? product.companyProductEnvironment : [
+          { id: `cp-${product.id}-1`, signal: `Teams adopt ${name} when the current process hides the deal that needs attention.` },
+        ],
+        dealEnvironmentSignals: product.dealEnvironmentSignals.length > 0 ? product.dealEnvironmentSignals : [
+          { id: `de-${product.id}-1`, signal: 'A stakeholder asks what this replaces.' },
+        ],
         draftGenerated: true,
         completedSections: {
           about: true,
@@ -616,13 +530,12 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
           marketInfo: true,
         },
       };
-
       return {
         ...state,
-        products: state.products.map((p, i) => (i === productIndex ? draftedProduct : p)),
+        products: state.products.map((item) => (item.id === product.id ? drafted : item)),
       };
     }
-    
+
     case 'UPDATE_COMPLETED_SECTIONS': {
       const product = state.products.find(p => p.id === action.productId);
       if (!product) return state;
@@ -752,35 +665,55 @@ export default function TeachPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const currentProduct = state.products[state.activeProductIndex];
-
-  const steps: { id: TeachStepId; title: string; group: string }[] = [
-    { id: 'company-overview', title: 'Company Overview', group: 'Organization' },
+  const steps: { id: TeachStepId; title: string; group: string; productId?: string; sample?: boolean }[] = [
+    { id: 'company-overview', title: 'Company', group: 'Organization' },
+    { id: 'products', title: 'Products', group: 'Organization' },
     { id: 'deal-stages', title: 'Deal Stages', group: 'Organization' },
     { id: 'sales-framework', title: 'Sales Framework', group: 'Organization' },
-    ...state.products.flatMap((product) => [
-      { id: 'product-about' as TeachStepId, title: `${product.name}: About`, group: product.name },
-      { id: 'product-personas' as TeachStepId, title: `${product.name}: Personas`, group: product.name },
-      { id: 'product-key-signals' as TeachStepId, title: `${product.name}: Key Signals`, group: product.name },
-      { id: 'product-competitive' as TeachStepId, title: `${product.name}: Competitive`, group: product.name },
-      { id: 'product-market-info' as TeachStepId, title: `${product.name}: Market Info`, group: product.name },
+    ...state.products.filter((product) => product.name.trim()).flatMap((product) => [
+      { id: 'product-about' as TeachStepId, title: 'About', group: product.name, productId: product.id, sample: product.sample },
+      { id: 'product-personas' as TeachStepId, title: 'Personas', group: product.name, productId: product.id, sample: product.sample },
+      { id: 'product-key-signals' as TeachStepId, title: 'Key Signals', group: product.name, productId: product.id, sample: product.sample },
+      { id: 'product-competitive' as TeachStepId, title: 'Competitive', group: product.name, productId: product.id, sample: product.sample },
+      { id: 'product-market-info' as TeachStepId, title: 'Market Info', group: product.name, productId: product.id, sample: product.sample },
     ]),
-    { id: 'gaps-contradictions', title: 'Gaps & Contradictions', group: 'Finalize' },
-    { id: 'visibility-go-live', title: 'Visibility & Go Live', group: 'Finalize' },
+    { id: 'gaps-contradictions', title: 'Gaps', group: 'Finalize' },
+    { id: 'visibility-go-live', title: 'Go Live', group: 'Finalize' },
   ];
 
   const totalSteps = steps.length;
-  const currentStepData = steps[state.currentStep];
+  const stepIndex = Math.min(state.currentStep, Math.max(0, totalSteps - 1));
+  const currentStepData = steps[stepIndex];
+  const currentProduct = currentStepData.productId
+    ? state.products.find((product) => product.id === currentStepData.productId)
+    : state.products[state.activeProductIndex];
+
+  useEffect(() => {
+    if (state.currentStep > totalSteps - 1) {
+      dispatch({ type: 'SET_STEP', step: Math.max(0, totalSteps - 1), productIndex: 0 });
+    }
+  }, [state.currentStep, totalSteps]);
 
   const canContinue = () => {
-    // Basic validation per step
+    const company = state.companyOverview;
     switch (currentStepData.id) {
       case 'company-overview':
-        return state.companyOverview.industry && state.companyOverview.customerSegment.length > 0;
+        return Boolean(
+          company.industry &&
+          company.customerSegment.length > 0 &&
+          company.typicalDealSize &&
+          company.typicalSalesCycle &&
+          company.website.trim() &&
+          company.contacts.some((contact) => contact.name.trim())
+        );
+      case 'products':
+        return userProducts.length > 0 && userProducts.every((product) => product.name.trim().length > 0);
       case 'deal-stages':
         return state.dealStages.length >= 3;
+      case 'sales-framework':
+        return state.salesFramework !== null;
       case 'product-about':
-        return currentProduct.description.length > 20;
+        return Boolean(currentProduct && currentProduct.description.trim().length > 20);
       default:
         return true;
     }
@@ -798,17 +731,74 @@ export default function TeachPage() {
   const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;
   const canGoLive = state.visibility.sensing && allProductsComplete && unresolvedContradictions === 0;
 
-  const handleNext = () => {
-    if (state.currentStep < totalSteps - 1) {
-      dispatch({ type: 'SET_STEP', step: state.currentStep + 1 });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const company = state.companyOverview;
+  const companyReady = Boolean(
+    company.industry &&
+    company.customerSegment.length > 0 &&
+    company.typicalDealSize &&
+    company.typicalSalesCycle &&
+    company.website.trim() &&
+    company.contacts.some((contact) => contact.name.trim())
+  );
+  const userProducts = state.products.filter((product) => !product.sample);
+  const productsReady = userProducts.length > 0 && userProducts.every((product) => product.name.trim().length > 0);
+  const stagesReady = state.dealStages.length >= 3;
+  const frameworkReady = state.salesFramework !== null;
+
+  const stepUnlocked = (index: number) => {
+    const id = steps[index]?.id;
+    if (!id) return false;
+    if (steps[index]?.sample) return true;
+    if (id === 'company-overview') return true;
+    if (!companyReady) return false;
+    if (id === 'products') return true;
+    if (!productsReady) return false;
+    if (id === 'deal-stages') return true;
+    if (!stagesReady) return false;
+    if (id === 'sales-framework') return true;
+    if (!frameworkReady) return false;
+    return true;
+  };
+
+  const goTo = (step: number) => {
+    if (!stepUnlocked(step)) return;
+    const target = steps[step];
+    const found = target?.productId
+      ? state.products.findIndex((product) => product.id === target.productId)
+      : state.activeProductIndex;
+    dispatch({ type: 'SET_STEP', step, productIndex: found >= 0 ? found : 0 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const inSample = Boolean(steps[stepIndex]?.sample);
+
+  const nextStepIndex = () => {
+    for (let index = stepIndex + 1; index < totalSteps; index += 1) {
+      const step = steps[index];
+      if (inSample) return step.sample ? index : -1;
+      if (step.sample) continue;
+      return stepUnlocked(index) ? index : -1;
     }
+    return -1;
+  };
+
+  const handleNext = () => {
+    const index = nextStepIndex();
+    if (index >= 0) goTo(index);
   };
 
   const handleBack = () => {
-    if (state.currentStep > 0) {
-      dispatch({ type: 'SET_STEP', step: state.currentStep - 1 });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    for (let index = stepIndex - 1; index >= 0; index -= 1) {
+      const step = steps[index];
+      if (inSample) {
+        if (step.sample || stepUnlocked(index)) {
+          goTo(index);
+          return;
+        }
+      } else if (!step.sample && stepUnlocked(index)) {
+        goTo(index);
+        return;
+      }
     }
   };
 
@@ -819,61 +809,76 @@ export default function TeachPage() {
     return acc;
   }, {} as Record<string, Array<typeof steps[0] & { index: number }>>);
 
-  const stepTitle = currentStepData.title.replace(/^(Hunter|Commander): /, '');
-
   return (
-    <div className="min-h-screen bg-piloteer-void text-piloteer-ink flex">
-      <aside className="w-[200px] shrink-0 border-r border-piloteer-hair px-7 py-8 flex flex-col">
-        <Link href="/" className="mb-14 opacity-90 hover:opacity-100 transition-opacity" aria-label="Hunter">
-          <PiloteerLogo className="h-5" />
+    <DashboardNav>
+    <div className="min-h-full bg-piloteer-void text-piloteer-ink flex">
+      <aside className="hidden lg:flex w-[220px] shrink-0 border-r border-piloteer-hair px-4 py-6 flex-col sticky top-0 h-[calc(100dvh-3.5rem)]">
+        <Link href="/settings" className="mb-6 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink transition-colors">
+          Settings
         </Link>
-        <div className="flex-1 space-y-9">
-          {Object.entries(groupedSteps).map(([group, groupSteps]) => {
-            const groupActive = groupSteps.some((step) => step.index === state.currentStep);
-            return (
-              <div key={group}>
-                <button
-                  onClick={() => dispatch({ type: 'SET_STEP', step: groupSteps[0].index })}
-                  className={`text-left text-[13px] font-semibold tracking-tight transition-colors ${
-                    groupActive ? 'text-piloteer-ink' : 'text-piloteer-mute hover:text-piloteer-metal'
-                  }`}
-                >
-                  {group}
-                </button>
-                <div className="mt-3 flex items-center gap-1.5">
-                  {groupSteps.map((step) => (
+        <p className="px-2 mb-6 text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-mute">Teach Hunter</p>
+        <nav className="flex-1 overflow-y-auto space-y-7 pr-1" aria-label="Teach steps">
+          {Object.entries(groupedSteps).map(([group, groupSteps]) => (
+            <div key={group}>
+              <p className="px-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-metal">
+                <span>{group}</span>
+                {groupSteps.some((step) => step.sample) && (
+                  <span className="rounded-full bg-piloteer-ink px-2 py-0.5 text-[11px] font-semibold normal-case tracking-normal text-piloteer-void">
+                    Sample
+                  </span>
+                )}
+              </p>
+              <div className="mt-2 space-y-0.5">
+                {groupSteps.map((step) => {
+                  const active = step.index === stepIndex;
+                  return (
                     <button
                       key={step.index}
-                      aria-label={step.title}
-                      onClick={() => dispatch({ type: 'SET_STEP', step: step.index })}
-                      className={`h-1.5 rounded-full transition-all ${
-                        state.currentStep === step.index
-                          ? 'w-7 bg-piloteer-ink'
-                          : step.index < state.currentStep
-                          ? 'w-1.5 bg-piloteer-verified'
-                          : 'w-1.5 bg-piloteer-hair-2 hover:bg-piloteer-metal'
+                      type="button"
+                      disabled={!stepUnlocked(step.index)}
+                      onClick={() => goTo(step.index)}
+                      className={`w-full text-left rounded-lg px-2 py-1.5 text-sm font-semibold leading-snug transition-colors disabled:cursor-not-allowed ${
+                        active ? 'bg-piloteer-surface text-piloteer-ink' : 'text-piloteer-metal hover:text-piloteer-ink'
                       }`}
-                    />
-                  ))}
-                </div>
+                    >
+                      {step.title}
+                    </button>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-        <Link
-          href="/dashboard"
-          className="text-[11px] font-mono uppercase tracking-[0.18em] text-piloteer-mute hover:text-piloteer-ink transition-colors"
-        >
-          Exit
-        </Link>
+            </div>
+          ))}
+        </nav>
       </aside>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-14 pt-12 pb-16 min-h-full flex flex-col">
-          <div className="flex items-baseline justify-between mb-14">
-            <h1 className="text-5xl font-bold tracking-editorial leading-none">{stepTitle}</h1>
-            <span className="font-mono text-[11px] tracking-[0.16em] text-piloteer-faint">
-              {String(state.currentStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-8 pb-16 min-h-full flex flex-col">
+          <label className="lg:hidden mb-6 block">
+            <span className="eyebrow mb-2 block">Step</span>
+            <select
+              value={stepIndex}
+              onChange={(event) => goTo(Number(event.target.value))}
+              className="w-full rounded-xl border border-piloteer-hair bg-piloteer-surface px-3 py-2 text-sm"
+            >
+              {steps.map((step, index) => (
+                <option key={`${step.id}-${index}`} value={index} disabled={!stepUnlocked(index)}>
+                  {step.group} · {step.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex items-baseline justify-between mb-12">
+            <div>
+              <p className="flex items-center gap-3 text-sm font-semibold text-piloteer-metal">
+                <span>{currentStepData.group}</span>
+                {currentStepData.sample && (
+                  <span className="rounded-full bg-piloteer-ink px-2.5 py-0.5 text-xs font-semibold text-piloteer-void">Sample</span>
+                )}
+              </p>
+              <h1 className="mt-2 text-5xl font-bold tracking-editorial leading-none">{currentStepData.title}</h1>
+            </div>
+            <span className="font-mono text-xs tracking-[0.16em] text-piloteer-metal">
+              {String(stepIndex + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
           </div>
 
@@ -892,13 +897,13 @@ export default function TeachPage() {
           <div className="flex items-center justify-between mt-16">
             <button
               onClick={handleBack}
-              disabled={state.currentStep === 0}
+              disabled={stepIndex === 0}
               className="btn-ghost disabled:opacity-20 disabled:cursor-not-allowed"
             >
               Back
             </button>
 
-            {state.currentStep === totalSteps - 1 ? (
+            {stepIndex === totalSteps - 1 ? (
               <div className="flex items-center gap-5">
                 {!canGoLive && (
                   <span className="text-xs font-mono uppercase tracking-widest text-piloteer-signal">
@@ -910,8 +915,8 @@ export default function TeachPage() {
                 <button
                   onClick={() => {
                     dispatch({ type: 'GO_LIVE' });
-                    showToast('Hunter is now live! Redirecting to dashboard...');
-                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                    showToast('Company model saved. Opening company performance...');
+                    setTimeout(() => window.location.href = '/dashboard/cro', 1200);
                   }}
                   disabled={!canGoLive}
                   className="btn-primary py-3.5 px-7 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -922,7 +927,7 @@ export default function TeachPage() {
             ) : (
               <button
                 onClick={handleNext}
-                disabled={!canContinue()}
+                disabled={!canContinue() || nextStepIndex() < 0}
                 className="btn-primary py-3.5 px-7 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Continue
@@ -938,6 +943,7 @@ export default function TeachPage() {
         </div>
       )}
     </div>
+    </DashboardNav>
   );
 }
 
@@ -948,32 +954,45 @@ function renderStepContent(
   showToast: (message: string) => void,
   keySignalsSubStep: 'questions' | 'objectives' | 'differentiators' | 'objections',
   setKeySignalsSubStep: (step: 'questions' | 'objectives' | 'differentiators' | 'objections') => void,
-  currentProduct: ProductTeach
+  currentProduct: ProductTeach | undefined
 ): React.ReactNode {
   switch (stepId) {
     case 'company-overview':
       return <CompanyOverviewStep state={state} dispatch={dispatch} />;
+    case 'products':
+      return <ProductsStep state={state} dispatch={dispatch} />;
     case 'deal-stages':
       return <DealStagesStep state={state} dispatch={dispatch} showToast={showToast} />;
     case 'sales-framework':
       return <SalesFrameworkStep state={state} dispatch={dispatch} />;
     case 'product-about':
-      return <ProductAboutStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
     case 'product-personas':
-      return <ProductPersonasStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
     case 'product-key-signals':
-      return (
-        <ProductKeySignalsStep
-          product={currentProduct}
-          dispatch={dispatch}
-          showToast={showToast}
-          subStep={keySignalsSubStep}
-          setSubStep={setKeySignalsSubStep}
-        />
-      );
     case 'product-competitive':
-      return <ProductCompetitiveStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
     case 'product-market-info':
+      if (!currentProduct) {
+        return <p className="text-base text-piloteer-metal">Name your products first.</p>;
+      }
+      if (stepId === 'product-about') {
+        return <ProductAboutStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+      }
+      if (stepId === 'product-personas') {
+        return <ProductPersonasStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+      }
+      if (stepId === 'product-key-signals') {
+        return (
+          <ProductKeySignalsStep
+            product={currentProduct}
+            dispatch={dispatch}
+            showToast={showToast}
+            subStep={keySignalsSubStep}
+            setSubStep={setKeySignalsSubStep}
+          />
+        );
+      }
+      if (stepId === 'product-competitive') {
+        return <ProductCompetitiveStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+      }
       return <ProductMarketInfoStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
     case 'gaps-contradictions':
       return <GapsContradictionsStep state={state} dispatch={dispatch} showToast={showToast} />;
@@ -1008,20 +1027,24 @@ function CompanyOverviewStep({ state, dispatch }: { state: TeachState; dispatch:
   const dealSizes = ['<$25K', '$25K-$100K', '$100K-$500K', '$500K+'];
   const salesCycles = ['<30 days', '30-90 days', '90-180 days', '180+ days'];
 
+  const choiceClass = (on: boolean) =>
+    `px-4 py-4 rounded-2xl text-left text-sm font-semibold transition-colors ${
+      on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
+    }`;
+
   return (
-    <div className="grid grid-cols-2 gap-x-16 gap-y-14">
+    <div className="max-w-3xl space-y-10">
       <section>
-        <span className="eyebrow">Industry</span>
-        <div className="mt-5 grid grid-cols-2 gap-2">
+        <h2 className="text-sm font-semibold">Industry</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {industries.map((industry) => {
             const on = state.companyOverview.industry === industry;
             return (
               <button
                 key={industry}
+                type="button"
                 onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'industry', value: industry })}
-                className={`px-4 py-4 rounded-2xl text-left text-sm font-semibold transition-colors ${
-                  on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-metal hover:text-piloteer-ink'
-                }`}
+                className={choiceClass(on)}
               >
                 {industry}
               </button>
@@ -1030,73 +1053,192 @@ function CompanyOverviewStep({ state, dispatch }: { state: TeachState; dispatch:
         </div>
       </section>
 
-      <div className="space-y-12">
-        <section>
-          <span className="eyebrow">Customer Segment</span>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            {segments.map((segment) => {
-              const isSelected = state.companyOverview.customerSegment.includes(segment.value);
-              return (
-                <button
-                  key={segment.value}
-                  onClick={() => {
-                    const current = state.companyOverview.customerSegment;
-                    const updated = isSelected
-                      ? current.filter((s) => s !== segment.value)
-                      : [...current, segment.value];
-                    dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'customerSegment', value: updated });
-                  }}
-                  className={`px-4 py-6 rounded-2xl text-sm font-semibold transition-colors ${
-                    isSelected ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-metal hover:text-piloteer-ink'
-                  }`}
-                >
-                  {segment.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+      <section>
+        <h2 className="text-sm font-semibold">Customer segment</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {segments.map((segment) => {
+            const isSelected = state.companyOverview.customerSegment.includes(segment.value);
+            return (
+              <button
+                key={segment.value}
+                type="button"
+                onClick={() => {
+                  const current = state.companyOverview.customerSegment;
+                  const updated = isSelected
+                    ? current.filter((s) => s !== segment.value)
+                    : [...current, segment.value];
+                  dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'customerSegment', value: updated });
+                }}
+                className={choiceClass(isSelected)}
+              >
+                {segment.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-        <section>
-          <span className="eyebrow">Typical Deal Size</span>
-          <div className="mt-5 grid grid-cols-4 gap-2">
-            {dealSizes.map((size) => {
-              const on = state.companyOverview.typicalDealSize === size;
-              return (
-                <button
-                  key={size}
-                  onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalDealSize', value: size })}
-                  className={`py-4 rounded-2xl text-xs font-semibold transition-colors ${
-                    on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-metal hover:text-piloteer-ink'
-                  }`}
-                >
-                  {size}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+      <section>
+        <h2 className="text-sm font-semibold">Typical deal size</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {dealSizes.map((size) => (
+            <button
+              key={size}
+              type="button"
+              onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalDealSize', value: size })}
+              className={choiceClass(state.companyOverview.typicalDealSize === size)}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </section>
 
-        <section>
-          <span className="eyebrow">Typical Sales Cycle</span>
-          <div className="mt-5 grid grid-cols-4 gap-2">
-            {salesCycles.map((cycle) => {
-              const on = state.companyOverview.typicalSalesCycle === cycle;
-              return (
-                <button
-                  key={cycle}
-                  onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalSalesCycle', value: cycle })}
-                  className={`py-4 rounded-2xl text-xs font-semibold transition-colors ${
-                    on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-metal hover:text-piloteer-ink'
-                  }`}
-                >
-                  {cycle}
-                </button>
-              );
-            })}
-          </div>
+      <section>
+        <h2 className="text-sm font-semibold">Typical sales cycle</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {salesCycles.map((cycle) => (
+            <button
+              key={cycle}
+              type="button"
+              onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalSalesCycle', value: cycle })}
+              className={choiceClass(state.companyOverview.typicalSalesCycle === cycle)}
+            >
+              {cycle}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold">Company website</h2>
+        <input
+          type="url"
+          value={state.companyOverview.website}
+          onChange={(e) => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'website', value: e.target.value })}
+          placeholder="https://company.com"
+          aria-label="Company website"
+          className="mt-4 w-full rounded-2xl bg-piloteer-surface px-4 py-4 text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
+        />
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-sm font-semibold">Contacts</h2>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'ADD_CONTACT' })}
+            className="text-sm font-semibold text-piloteer-ink hover:text-white"
+          >
+            Add contact
+          </button>
+        </div>
+        <div className="mt-4 space-y-3">
+          {state.companyOverview.contacts.map((contact) => (
+            <div key={contact.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+              <input
+                value={contact.name}
+                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'name', value: e.target.value })}
+                placeholder="Name"
+                aria-label="Contact name"
+                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
+              />
+              <input
+                value={contact.role}
+                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'role', value: e.target.value })}
+                placeholder="Role"
+                aria-label="Contact role"
+                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
+              />
+              <input
+                value={contact.email}
+                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'email', value: e.target.value })}
+                placeholder="Email"
+                aria-label="Contact email"
+                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
+              />
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'REMOVE_CONTACT', id: contact.id })}
+                disabled={state.companyOverview.contacts.length === 1}
+                aria-label="Remove contact"
+                className="rounded-2xl px-3 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink disabled:opacity-30"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProductsStep({ state, dispatch }: { state: TeachState; dispatch: React.Dispatch<TeachAction> }) {
+  const sample = state.products.find((product) => product.sample);
+  const userProducts = state.products.filter((product) => !product.sample);
+
+  return (
+    <div className="max-w-xl space-y-10">
+      {sample && (
+        <button
+          type="button"
+          onClick={() => {
+            const index = state.products.findIndex((product) => product.id === sample.id);
+            const aboutStep = 4;
+            dispatch({ type: 'SET_STEP', step: aboutStep, productIndex: index >= 0 ? index : 0 });
+          }}
+          className="flex w-full items-center gap-5 rounded-3xl bg-piloteer-surface p-5 text-left hover:bg-piloteer-surface-2"
+        >
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-piloteer-void text-2xl font-bold">
+            {sample.name.slice(0, 1)}
+          </span>
+          <span>
+            <span className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-piloteer-ink">{sample.name}</span>
+              <span className="rounded-full bg-piloteer-ink px-2 py-0.5 text-xs font-semibold text-piloteer-void">Sample</span>
+            </span>
+            <span className="mt-1 block text-sm text-piloteer-metal">A filled example. Open it, then add your own products below.</span>
+          </span>
+        </button>
+      )}
+
+      <section>
+        <h2 className="text-sm font-semibold">How many products do you sell?</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5, 6].map((count) => {
+            const on = userProducts.length === count;
+            return (
+              <button
+                key={count}
+                type="button"
+                onClick={() => dispatch({ type: 'SET_PRODUCT_COUNT', count })}
+                className={`h-12 w-12 rounded-2xl text-sm font-semibold transition-colors ${
+                  on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
+                }`}
+              >
+                {count}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {userProducts.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold">Product names</h2>
+          {userProducts.map((product, index) => (
+            <input
+              key={product.id}
+              value={product.name}
+              onChange={(e) => dispatch({ type: 'RENAME_PRODUCT', productId: product.id, name: e.target.value })}
+              placeholder={`Product ${index + 1}`}
+              aria-label={`Product ${index + 1} name`}
+              className="w-full rounded-2xl bg-piloteer-surface px-4 py-4 text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
+            />
+          ))}
         </section>
-      </div>
+      )}
     </div>
   );
 }
@@ -1124,11 +1266,11 @@ function DealStagesStep({
                 setSelectedTemplate(key);
                 showToast(`Loaded ${key} template`);
               }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition-colors ${
-                selectedTemplate === key ? 'bg-piloteer-ink text-piloteer-void' : 'text-piloteer-mute hover:text-piloteer-ink'
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                selectedTemplate === key ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
               }`}
             >
-              {key}
+              {key === 'saas' ? 'SaaS' : key.charAt(0).toUpperCase() + key.slice(1)}
             </button>
           ))}
         </div>
@@ -1145,12 +1287,13 @@ function DealStagesStep({
       </div>
 
       <div className="max-w-3xl space-y-2.5">
+        {state.dealStages.length === 0 && (
+          <p className="text-base text-piloteer-metal">Choose a template, or add your own stages.</p>
+        )}
         {state.dealStages.map((stage, index) => {
-          const span = state.dealStages.length > 1 ? (100 - 46) / (state.dealStages.length - 1) : 0;
-          const width = 100 - index * span;
           return (
-            <div key={stage.id} className="flex items-center gap-4" style={{ width: `${width}%` }}>
-              <span className="w-6 font-mono text-[11px] text-piloteer-faint">{String(index + 1).padStart(2, '0')}</span>
+            <div key={stage.id} className="flex items-center gap-4">
+              <span className="w-6 font-mono text-xs text-piloteer-metal">{String(index + 1).padStart(2, '0')}</span>
               <div className="flex-1 min-w-0 bg-piloteer-surface rounded-full pl-5 pr-3 py-3 flex items-center gap-3">
                 <input
                   type="text"
@@ -1165,7 +1308,7 @@ function DealStagesStep({
                     showToast('Stage removed');
                   }}
                   aria-label="Remove stage"
-                  className="text-piloteer-faint hover:text-piloteer-ink transition-colors"
+                  className="text-piloteer-metal hover:text-piloteer-ink transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                     <path d="M18 6L6 18M6 6l12 12" />
@@ -1198,11 +1341,9 @@ function SalesFrameworkStep({ state, dispatch }: { state: TeachState; dispatch: 
               }`}
             >
               <span className="font-semibold text-[15px] leading-snug">{info.name}</span>
-              {info.elements && (
-                <span className={`mt-4 block text-[10px] font-mono uppercase tracking-wider leading-relaxed ${isSelected ? 'text-piloteer-void/55' : 'text-piloteer-faint'}`}>
-                  {info.elements.join(' · ')}
-                </span>
-              )}
+              <span className={`mt-4 block text-sm leading-relaxed ${isSelected ? 'text-piloteer-void/80' : 'text-piloteer-metal'}`}>
+                {info.description}
+              </span>
             </button>
           );
         })}
@@ -1244,6 +1385,15 @@ function ProductAboutStep({
   const [urlInput, setUrlInput] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
 
+  const draftWithHunter = () => {
+    setIsDrafting(true);
+    window.setTimeout(() => {
+      dispatch({ type: 'DRAFT_FROM_SOURCES', productId: product.id });
+      setIsDrafting(false);
+      showToast('Hunter drafted a starting point. Edit anything that is not true.');
+    }, 700);
+  };
+
   const handleFileUpload = () => {
     // Mock file upload
     const mockSource: TeachSource = {
@@ -1270,19 +1420,15 @@ function ProductAboutStep({
     }
   };
 
-  const handleDraftFromSources = () => {
-    setIsDrafting(true);
-    setTimeout(() => {
-      dispatch({ type: 'DRAFT_FROM_SOURCES', productId: product.id });
-      setIsDrafting(false);
-      showToast('Draft generated from sources! Review each section.');
-    }, 2000);
-  };
-
   return (
     <div className="grid grid-cols-[180px_1fr] gap-16 items-start">
-      <div className="w-[180px] h-[180px] rounded-full bg-piloteer-surface flex items-center justify-center">
+      <div className="relative w-[180px] h-[180px] rounded-full bg-piloteer-surface flex items-center justify-center">
         <span className="text-6xl font-bold tracking-editorial">{product.name.slice(0, 1)}</span>
+        {product.sample && (
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-piloteer-ink px-3 py-1 text-xs font-semibold text-piloteer-void">
+            Sample
+          </span>
+        )}
       </div>
 
       <div className="min-w-0">
@@ -1290,11 +1436,11 @@ function ProductAboutStep({
           {product.sources.map((source) => (
             <div key={source.id} className="inline-flex items-center gap-2 bg-piloteer-surface rounded-full pl-4 pr-2 py-2">
               <span className="text-sm font-semibold">{source.name}</span>
-              <span className="text-[11px] font-mono text-piloteer-faint">{source.size || source.url}</span>
+              {source.size && <span className="text-sm text-piloteer-metal">{source.size}</span>}
               <button
                 onClick={() => dispatch({ type: 'REMOVE_PRODUCT_SOURCE', productId: product.id, sourceId: source.id })}
                 aria-label="Remove source"
-                className="text-piloteer-faint hover:text-piloteer-ink"
+                className="text-piloteer-metal hover:text-piloteer-ink"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -1318,7 +1464,7 @@ function ProductAboutStep({
               onChange={(e) => setUrlInput(e.target.value)}
               placeholder="URL"
               aria-label="Source URL"
-              className="w-24 bg-transparent text-sm text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+              className="w-24 bg-transparent text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
             />
             <button type="submit" disabled={!urlInput.trim()} aria-label="Add URL" className="w-7 h-7 rounded-full text-piloteer-metal hover:text-piloteer-ink disabled:opacity-30">
               +
@@ -1330,19 +1476,20 @@ function ProductAboutStep({
           value={product.description}
           onChange={(e) => dispatch({ type: 'UPDATE_PRODUCT', productId: product.id, field: 'description', value: e.target.value })}
           rows={4}
-          className="mt-10 w-full bg-transparent text-2xl font-medium leading-snug tracking-editorial text-piloteer-ink outline-none resize-none placeholder:text-piloteer-faint"
-          placeholder={product.name}
+          className="mt-10 w-full bg-transparent text-2xl font-medium leading-snug tracking-editorial text-piloteer-ink outline-none resize-none placeholder:text-piloteer-metal"
+          placeholder={`What does ${product.name} do?`}
           aria-label={`Describe ${product.name}`}
         />
 
-        {product.sources.length > 0 && (
-          <button
-            onClick={handleDraftFromSources}
-            disabled={isDrafting || product.draftGenerated}
-            className="mt-6 text-[11px] font-mono uppercase tracking-[0.18em] text-piloteer-mute hover:text-piloteer-ink disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isDrafting ? 'Drafting' : product.draftGenerated ? 'Drafted' : 'Draft'}
-          </button>
+        {!product.sample && (
+          <div className="mt-8 flex items-center gap-4">
+            <button type="button" onClick={draftWithHunter} disabled={isDrafting} className="btn-primary disabled:opacity-40">
+              {isDrafting ? 'Hunter is drafting' : 'Draft with Hunter'}
+            </button>
+            {product.draftGenerated && (
+              <span className="text-sm text-piloteer-metal">Edit anything that is not true.</span>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -1401,7 +1548,7 @@ function ProductPersonasStep({
                 {initials(persona.name) || '·'}
               </div>
               <div className="mt-8 font-semibold leading-snug">{persona.name}</div>
-              <div className={`mt-2 text-[11px] font-mono uppercase tracking-wider ${selected ? 'text-piloteer-void/60' : 'text-piloteer-faint'}`}>
+              <div className={`mt-2 text-sm font-semibold ${selected ? 'text-piloteer-void/80' : 'text-piloteer-metal'}`}>
                 {persona.role}
               </div>
             </button>
@@ -1410,7 +1557,7 @@ function ProductPersonasStep({
         <button
           onClick={handleAddPersona}
           aria-label="Add persona"
-          className="w-52 shrink-0 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-faint hover:text-piloteer-ink hover:border-piloteer-hair-2 transition-colors"
+          className="w-52 shrink-0 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-metal hover:text-piloteer-ink hover:border-piloteer-hair-2 transition-colors"
         >
           +
         </button>
@@ -1434,7 +1581,7 @@ function ProductPersonasStep({
                 setOpenId(null);
               }}
               aria-label="Remove persona"
-              className="text-piloteer-faint hover:text-piloteer-ink"
+              className="text-piloteer-metal hover:text-piloteer-ink"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -1446,7 +1593,8 @@ function ProductPersonasStep({
             onChange={(e) =>
               dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'role', value: e.target.value })
             }
-            className="mt-2 w-full bg-transparent text-[11px] font-mono uppercase tracking-wider text-piloteer-mute outline-none"
+            placeholder="Role"
+            className="mt-2 w-full bg-transparent text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
             aria-label="Role"
           />
           <textarea
@@ -1494,10 +1642,10 @@ function ProductKeySignalsStep({
             className="text-left"
           >
             <div className={`h-px w-16 mb-3 ${subStep === step.id ? 'bg-piloteer-ink' : step.completed ? 'bg-piloteer-verified' : 'bg-piloteer-hair'}`} />
-            <div className={`text-[11px] font-mono uppercase tracking-wider ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-faint'}`}>
+            <div className={`text-sm font-semibold ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-metal'}`}>
               0{idx + 1}
             </div>
-            <div className={`mt-1 text-sm font-semibold ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-mute'}`}>
+            <div className={`mt-1 text-sm font-semibold ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-metal'}`}>
               {step.label}
             </div>
           </button>
@@ -1536,7 +1684,7 @@ function KeyQuestionsWorkshop({
       <ol>
         {product.keyQuestions.map((question, index) => (
           <li key={index} className="flex items-baseline gap-6 py-4 border-b border-piloteer-hair">
-            <span className="w-6 font-mono text-[11px] text-piloteer-faint">{String(index + 1).padStart(2, '0')}</span>
+            <span className="w-6 font-mono text-[11px] text-piloteer-metal">{String(index + 1).padStart(2, '0')}</span>
             <input
               type="text"
               value={question}
@@ -1550,7 +1698,7 @@ function KeyQuestionsWorkshop({
                 showToast('Question removed');
               }}
               aria-label="Remove question"
-              className="text-piloteer-faint hover:text-piloteer-ink"
+              className="text-piloteer-metal hover:text-piloteer-ink"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -1566,14 +1714,14 @@ function KeyQuestionsWorkshop({
           handleAddQuestion();
         }}
       >
-        <span className="w-6 font-mono text-[11px] text-piloteer-faint">{String(product.keyQuestions.length + 1).padStart(2, '0')}</span>
+        <span className="w-6 font-mono text-[11px] text-piloteer-metal">{String(product.keyQuestions.length + 1).padStart(2, '0')}</span>
         <input
           type="text"
           value={newQuestion}
           onChange={(e) => setNewQuestion(e.target.value)}
           placeholder="Add"
           aria-label="Add question"
-          className="flex-1 bg-transparent outline-none text-lg text-piloteer-ink placeholder:text-piloteer-faint"
+          className="flex-1 bg-transparent outline-none text-lg text-piloteer-ink placeholder:text-piloteer-metal"
         />
       </form>
     </div>
@@ -1611,7 +1759,7 @@ function KeyObjectivesWorkshop({
                 showToast('Objective removed');
               }}
               aria-label="Remove objective"
-              className="text-piloteer-faint hover:text-piloteer-ink"
+              className="text-piloteer-metal hover:text-piloteer-ink"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -1633,7 +1781,7 @@ function KeyObjectivesWorkshop({
           onChange={(e) => setNewObjective(e.target.value)}
           placeholder="Add"
           aria-label="Add objective"
-          className="w-full bg-transparent border-b border-piloteer-hair py-3 text-lg outline-none placeholder:text-piloteer-faint"
+          className="w-full bg-transparent border-b border-piloteer-hair py-3 text-lg outline-none placeholder:text-piloteer-metal"
         />
       </form>
     </div>
@@ -1661,7 +1809,7 @@ function DifferentiatorsWorkshop({
 
   return (
     <div>
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-x-8 text-[11px] font-mono uppercase tracking-widest text-piloteer-faint pb-3">
+      <div className="grid grid-cols-[1fr_1fr_auto] gap-x-8 text-sm font-semibold text-piloteer-metal pb-3">
         <span>They</span>
         <span>We</span>
         <span />
@@ -1692,7 +1840,7 @@ function DifferentiatorsWorkshop({
               showToast('Differentiator removed');
             }}
             aria-label="Remove differentiator"
-            className="text-piloteer-faint hover:text-piloteer-ink mt-1"
+            className="text-piloteer-metal hover:text-piloteer-ink mt-1"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -1700,7 +1848,7 @@ function DifferentiatorsWorkshop({
           </button>
         </div>
       ))}
-      <button onClick={handleAddDifferentiator} className="mt-4 text-[11px] font-mono uppercase tracking-widest text-piloteer-mute hover:text-piloteer-ink">
+      <button onClick={handleAddDifferentiator} className="mt-4 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
         Add
       </button>
     </div>
@@ -1728,7 +1876,7 @@ function ObjectionsWorkshop({
 
   return (
     <div>
-      <div className="grid grid-cols-[1fr_1.4fr_auto] gap-x-8 text-[11px] font-mono uppercase tracking-widest text-piloteer-faint pb-3">
+      <div className="grid grid-cols-[1fr_1.4fr_auto] gap-x-8 text-sm font-semibold text-piloteer-metal pb-3">
         <span>Objection</span>
         <span>Counter</span>
         <span />
@@ -1759,7 +1907,7 @@ function ObjectionsWorkshop({
               showToast('Objection removed');
             }}
             aria-label="Remove objection"
-            className="text-piloteer-faint hover:text-piloteer-ink mt-1"
+            className="text-piloteer-metal hover:text-piloteer-ink mt-1"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -1767,7 +1915,7 @@ function ObjectionsWorkshop({
           </button>
         </div>
       ))}
-      <button onClick={handleAddObjection} className="mt-4 text-[11px] font-mono uppercase tracking-widest text-piloteer-mute hover:text-piloteer-ink">
+      <button onClick={handleAddObjection} className="mt-4 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
         Add
       </button>
     </div>
@@ -1827,7 +1975,7 @@ function ProductCompetitiveStep({
         <button
           onClick={handleAddCompetitor}
           aria-label="Add competitor"
-          className="w-36 h-36 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-faint hover:text-piloteer-ink"
+          className="w-36 h-36 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-metal hover:text-piloteer-ink"
         >
           +
         </button>
@@ -1851,7 +1999,7 @@ function ProductCompetitiveStep({
                 setActiveId(null);
               }}
               aria-label="Remove competitor"
-              className="text-piloteer-faint hover:text-piloteer-ink"
+              className="text-piloteer-metal hover:text-piloteer-ink"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -1889,7 +2037,7 @@ function ProductCompetitiveStep({
                 className="flex-1 bg-transparent outline-none text-piloteer-ink"
                 aria-label="Advantage"
               />
-              <span className="text-[11px] font-mono text-piloteer-faint">vs</span>
+              <span className="text-[11px] font-mono text-piloteer-metal">vs</span>
               <select
                 value={adv.competitorName}
                 onChange={(e) => {
@@ -1912,7 +2060,7 @@ function ProductCompetitiveStep({
               <button
                 onClick={() => dispatch({ type: 'REMOVE_COMPARISON_ADVANTAGE', productId: product.id, advId: adv.id })}
                 aria-label="Remove advantage"
-                className="text-piloteer-faint hover:text-piloteer-ink"
+                className="text-piloteer-metal hover:text-piloteer-ink"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -1920,7 +2068,7 @@ function ProductCompetitiveStep({
               </button>
             </div>
           ))}
-          <button onClick={handleAddAdvantage} className="mt-3 text-[11px] font-mono uppercase tracking-widest text-piloteer-mute hover:text-piloteer-ink">
+          <button onClick={handleAddAdvantage} className="mt-3 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
             Add
           </button>
         </div>
@@ -1964,7 +2112,7 @@ function ProductMarketInfoStep({
               <button
                 onClick={() => handleAddSignal(column.category)}
                 aria-label={`Add ${column.title}`}
-                className="text-piloteer-faint hover:text-piloteer-ink text-lg leading-none"
+                className="text-piloteer-metal hover:text-piloteer-ink text-lg leading-none"
               >
                 +
               </button>
@@ -1990,7 +2138,7 @@ function ProductMarketInfoStep({
                       showToast('Signal removed');
                     }}
                     aria-label="Remove signal"
-                    className="text-piloteer-faint hover:text-piloteer-ink mt-1"
+                    className="text-piloteer-metal hover:text-piloteer-ink mt-1"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                       <path d="M18 6L6 18M6 6l12 12" />
@@ -2025,9 +2173,9 @@ function GapsContradictionsStep({
 
   if (!current && resolvedContradictions.length === 0) {
     return (
-      <div className="py-24">
-        <div className="w-14 h-14 rounded-full bg-piloteer-surface" />
-      </div>
+      <p className="max-w-xl text-base leading-relaxed text-piloteer-metal">
+        Nothing conflicts with what you have entered.
+      </p>
     );
   }
 
@@ -2073,7 +2221,7 @@ function GapsContradictionsStep({
           }}
           className="min-h-[200px] rounded-3xl bg-piloteer-surface p-8 text-left hover:bg-piloteer-ink hover:text-piloteer-void transition-colors group"
         >
-          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-piloteer-faint group-hover:text-piloteer-void/50">A</div>
+          <div className="text-sm font-semibold text-piloteer-metal group-hover:text-piloteer-void/80">A</div>
           <p className="mt-8 text-lg font-semibold leading-snug">{current.option1}</p>
         </button>
         <button
@@ -2084,7 +2232,7 @@ function GapsContradictionsStep({
           }}
           className="min-h-[200px] rounded-3xl bg-piloteer-surface p-8 text-left hover:bg-piloteer-ink hover:text-piloteer-void transition-colors group"
         >
-          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-piloteer-faint group-hover:text-piloteer-void/50">B</div>
+          <div className="text-sm font-semibold text-piloteer-metal group-hover:text-piloteer-void/80">B</div>
           <p className="mt-8 text-lg font-semibold leading-snug">{current.option2}</p>
         </button>
       </div>

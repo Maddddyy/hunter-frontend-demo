@@ -3,7 +3,7 @@
 import DashboardNav from '@/components/DashboardNav';
 import DealsScreen from '@/components/DealsScreen';
 
-export default function DealsPage() {
+export default function DealRoute() {
   return (
     <DashboardNav>
       <DealsScreen />

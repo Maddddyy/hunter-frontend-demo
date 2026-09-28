@@ -104,17 +104,48 @@ export const techCorpContacts: Contact[] = [
 ];
 
 // Deals in pipeline (Piloteer's rep perspective)
+export const sellers = [
+  {
+    id: 'emma' as const,
+    name: 'Emma Dixon',
+    role: 'Sales rep',
+    initials: 'ED',
+    focus: 'Permission-based discovery is showing up on the deals that are moving.',
+  },
+  {
+    id: 'noah' as const,
+    name: 'Noah Adler',
+    role: 'Sales rep',
+    initials: 'NA',
+    focus: 'Deployment questions are still getting feature answers. Two deals are losing ground.',
+  },
+];
+
 export const mockDeals: Deal[] = [
   {
     id: 'deal-techcorp',
     company: techCorpCompany,
     value: 180000,
-    stage: 'technical-validation' as any,
+    stage: 'technical-validation',
     momentum: 32,
     momentumDirection: 'gaining',
     momentumChangeLastWeek: 18,
+    ownerId: 'emma',
+    segment: 'enterprise',
+    why: 'Security cleared. Sarah named the board timeline.',
+    history: [8, 12, 14, 22, 28, 32],
+    drivers: [
+      { id: 'velocity', points: 12, reason: 'Sarah replied the same day. The board conversation is the next step they are trying to date.' },
+      { id: 'communication', points: 14, reason: 'David and Maria are on the thread. The language moved from “if we can deploy” to “how we roll this out.”' },
+      { id: 'progression', points: 6, reason: 'Security review cleared. The executive date is still open, which keeps this short of Strong.' },
+    ],
+    prompts: [
+      { q: 'Why is TechCorp gaining?', a: 'Security finished early and Sarah named board timing. Velocity is +12 and communication is +14. Progression is only +6 because the executive date is not booked yet. 12 + 14 + 6 = +32.' },
+      { q: 'What would make this Strong?', a: 'A written executive conversation inside their board cycle. That is a dated state change. Warm language alone will not get it there.' },
+      { q: 'What is still open?', a: 'The presentation date, whether the pilot is the full sales team or a subset, and the Salesforce integration timeline.' },
+    ],
     needsAction: true,
-    actionReason: 'Security review completed; champion ready to present to economic buyer',
+    actionReason: 'Confirm the security sign-off in writing, then book the executive conversation inside their board cycle.',
     primaryPattern: {
       id: 'pattern-implementation-risk',
       type: 'buyer',
@@ -141,8 +172,22 @@ export const mockDeals: Deal[] = [
     momentum: -12,
     momentumDirection: 'losing',
     momentumChangeLastWeek: -8,
+    ownerId: 'noah',
+    segment: 'enterprise',
+    why: 'EU hosting is still open. Replies are slowing.',
+    history: [6, 4, 1, -4, -9, -12],
+    drivers: [
+      { id: 'velocity', points: -8, reason: 'Replies have slowed against Acme’s own pace. No next step is on the calendar.' },
+      { id: 'communication', points: -6, reason: 'The thread is back to one person. Lena is hedging instead of naming a date.' },
+      { id: 'progression', points: 2, reason: 'The proposal is still the last real artifact. The EU hosting risk is open, not retired.' },
+    ],
+    prompts: [
+      { q: 'Why is Acme slipping?', a: 'Velocity is −8 and communication is −6. The EU hosting question has sat for three weeks, and nothing is booked next. Progression is only +2 because the proposal itself did not move. −8 + −6 + +2 = −12.' },
+      { q: 'What should Noah do on the next call?', a: 'Answer the rollout question with a customer story, then put a dated step on the calendar. A better call does not create EU hosting. That risk has to be escalated.' },
+      { q: 'Is this the CRM stage?', a: 'No. The CRM card says Proposal. Momentum is −12 because the buyer went quieter and the risk stayed open. Stage and momentum sit side by side.' },
+    ],
     needsAction: true,
-    actionReason: 'EU data residency blocker unresolved; champion engagement declining',
+    actionReason: 'Coach the rollout story, book a dated next step, and escalate EU hosting. The call cannot invent a product path.',
   },
   {
     id: 'deal-globex',
@@ -152,19 +197,132 @@ export const mockDeals: Deal[] = [
     momentum: 8,
     momentumDirection: 'holding',
     momentumChangeLastWeek: 2,
+    ownerId: 'emma',
+    segment: 'mid-market',
+    why: 'Cadence is unchanged. Still one thread.',
+    history: [4, 6, 7, 8, 8, 8],
+    drivers: [
+      { id: 'velocity', points: 2, reason: 'Reply time matches Globex’s own baseline. Nothing has sped up or stalled.' },
+      { id: 'communication', points: 5, reason: 'They volunteered a pricing constraint. No new person has joined the thread.' },
+      { id: 'progression', points: 1, reason: 'The proposal is out. No new document, date, or decision landed this week.' },
+    ],
+    prompts: [
+      { q: 'Why is Globex neutral?', a: 'It is +8, inside the neutral band. Velocity +2, communication +5, progression +1. The exchange is polite and it is not advancing.' },
+      { q: 'What would move Globex?', a: 'A named reviewer or a date for a decision. Another proposal recap will not change progression.' },
+    ],
     needsAction: false,
   },
   {
     id: 'deal-midway',
-    company: { id: 'midway', name: 'Midway Healthcare', industry: 'Healthcare' },
+    company: { id: 'midway', name: 'Midway Healthcare', industry: 'Healthcare', website: 'https://midwayhealth.example' },
     value: 78000,
     stage: 'discovery',
     momentum: -28,
     momentumDirection: 'losing',
     momentumChangeLastWeek: -15,
+    ownerId: 'noah',
+    segment: 'mid-market',
+    why: 'No new stakeholder in three weeks. Timeline slipped.',
+    history: [10, 4, -2, -12, -20, -28],
+    drivers: [
+      { id: 'velocity', points: -12, reason: 'The gaps between conversations are wider than Midway’s own early pace.' },
+      { id: 'communication', points: -10, reason: 'The buyer mentioned alternatives and did not name them. Disclosure got thinner.' },
+      { id: 'progression', points: -6, reason: 'The timeline slipped. No decision, person, or date was added.' },
+    ],
+    prompts: [
+      { q: 'Why does Midway need attention?', a: 'All three parts are negative: velocity −12, communication −10, progression −6. That is −28. The thread did not grow, and the last conversations did not produce a step.' },
+      { q: 'What is the next question?', a: 'Ask which alternatives are in the evaluation, and who else has to see the answer. A feature walkthrough is what stalled the last call.' },
+    ],
     needsAction: true,
-    actionReason: 'Timeline slipping; no new stakeholders introduced in three weeks',
+    actionReason: 'Ask which alternatives are being evaluated, and who else owns the decision.',
   },
+  {
+    id: 'deal-helios',
+    company: { id: 'helios', name: 'Helios Bank', industry: 'Financial Services', website: 'https://heliosbank.example' },
+    value: 210000,
+    stage: 'negotiation',
+    momentum: 41,
+    momentumDirection: 'gaining',
+    momentumChangeLastWeek: 9,
+    ownerId: 'emma',
+    segment: 'enterprise',
+    why: 'Friday committee is dated. The success plan is still open.',
+    history: [18, 22, 27, 33, 38, 41],
+    drivers: [
+      { id: 'velocity', points: 14, reason: 'Replies are inside Helios’s usual window, and Friday is a real date.' },
+      { id: 'communication', points: 15, reason: 'The economic buyer is using ownership language, not “if we look at this.”' },
+      { id: 'progression', points: 12, reason: 'They asked for a written success plan before the committee. The artifact is requested and not sent.' },
+    ],
+    prompts: [
+      { q: 'Why is Helios gaining?', a: 'Velocity +14, communication +15, progression +12. The committee date is real, and they asked for a document. +41 stays in Gaining until that plan is in their hands.' },
+      { q: 'What is the open commitment?', a: 'Emma said she would send a one-page success plan before Friday. Until it is sent, progression cannot move to a closed step.' },
+    ],
+    needsAction: true,
+    actionReason: 'Send the one-page success plan and ask them to put it on Friday’s committee agenda.',
+  },
+  {
+    id: 'deal-northwind',
+    company: { id: 'northwind', name: 'Northwind Logistics', industry: 'Logistics', website: 'https://northwind.example' },
+    value: 64000,
+    stage: 'discovery',
+    momentum: 18,
+    momentumDirection: 'gaining',
+    momentumChangeLastWeek: 6,
+    ownerId: 'emma',
+    segment: 'mid-market',
+    why: 'Tomorrow’s call is booked. The goal is still blank.',
+    history: [0, 4, 9, 12, 16, 18],
+    drivers: [
+      { id: 'velocity', points: 11, reason: 'The second call is on the calendar for tomorrow. That is faster than the first gap.' },
+      { id: 'communication', points: 8, reason: 'Omar named the warehouse rollout worry out loud.' },
+      { id: 'progression', points: -1, reason: 'The step is booked and the goal is blank, so the deal has not actually advanced.' },
+    ],
+    prompts: [
+      { q: 'Why isn’t the booked call enough?', a: 'Velocity is +11 because tomorrow is on the calendar. Progression is −1 because the goal is blank. A meeting without an outcome is tempo, not a state change. 11 + 8 + −1 = +18.' },
+      { q: 'What should the goal be?', a: 'Agree which site would pilot, and who owns the rollout. That gives the call a decision and a person.' },
+    ],
+    needsAction: true,
+    actionReason: 'Set the goal before tomorrow: which site pilots, and who owns the rollout.',
+  },
+  {
+    id: 'deal-brightline',
+    company: { id: 'brightline', name: 'Brightline Retail', industry: 'Retail', website: 'https://brightline.example' },
+    value: 54000,
+    stage: 'discovery',
+    momentum: 2,
+    momentumDirection: 'holding',
+    momentumChangeLastWeek: 0,
+    ownerId: 'noah',
+    segment: 'mid-market',
+    why: 'Warm, and not advancing.',
+    history: [1, 2, 2, 3, 2, 2],
+    drivers: [
+      { id: 'velocity', points: 0, reason: 'Response time matches Brightline’s own norm. No next step is booked.' },
+      { id: 'communication', points: 3, reason: 'The tone is warm. It is still a single contact.' },
+      { id: 'progression', points: -1, reason: 'Discovery repeated the same topics. No decision, person, or date.' },
+    ],
+    prompts: [
+      { q: 'Why is Brightline neutral?', a: 'It is +2. Communication +3 is warmth. Velocity is 0 and progression is −1. Warm and stuck are different things. 0 + 3 + −1 = +2.' },
+      { q: 'What would count as progress?', a: 'A second person on the thread, or a date for a working session. Another friendly discovery call will leave the reading here.' },
+    ],
+    needsAction: false,
+  },
+];
+
+mockDeals.forEach((deal) => {
+  const sum = deal.drivers.reduce((total, driver) => total + driver.points, 0);
+  if (sum !== deal.momentum) {
+    throw new Error(`${deal.id} drivers add up to ${sum}, not ${deal.momentum}`);
+  }
+  if (deal.history[deal.history.length - 1] !== deal.momentum) {
+    throw new Error(`${deal.id} history does not end on ${deal.momentum}`);
+  }
+});
+
+export const bookEvents = [
+  { id: 'evt-security', at: 32, label: 'Sep 13', detail: 'TechCorp security review finished early. The book turned up.' },
+  { id: 'evt-acme', at: 58, label: 'Sep 18', detail: 'Acme asked about EU hosting again. No answer landed. Momentum slipped.' },
+  { id: 'evt-board', at: 82, label: 'Sep 25', detail: 'Sarah Chen named the board timeline. TechCorp kept gaining.' },
 ];
 
 // Mock interactions
@@ -296,6 +454,11 @@ export const buyerSellerPatterns: Pattern[] = [
     evidence: {
       level: 'supported',
       interactions: 15,
+      details: [
+        'TechCorp: Emma acknowledged the adoption worry. Sarah then named the sales-floor concern.',
+        'Acme: a feature walkthrough followed the rollout question. The buyer went quiet.',
+        'Midway: the same sequence. Engagement fell after the explanation.',
+      ],
     },
     impact: 'progression',
     recommendedAction: 'Practice: "That makes sense" + clarifying question before addressing concern',
@@ -354,6 +517,39 @@ export const needsYouItems: NeedsYouItem[] = [
     recommendedAction: 'Ask champion which alternatives and what criteria matter most',
     priority: 3,
   },
+  {
+    id: 'ny-4',
+    type: 'commitment',
+    deal: mockDeals.find((deal) => deal.id === 'deal-helios')!,
+    reason: 'Helios Bank is waiting on a success plan you said you would send',
+    whatHunterSees: 'The economic buyer repeated the Friday committee date. The commitment is still open.',
+    recommendedAction: 'Send the one-page success plan and ask them to put it on the committee agenda',
+    priority: 4,
+  },
+  {
+    id: 'ny-5',
+    type: 'prep-needed',
+    deal: mockDeals.find((deal) => deal.id === 'deal-northwind')!,
+    reason: 'Northwind Logistics tomorrow is still missing a goal',
+    whatHunterSees: 'First call surfaced a warehouse rollout worry. Hunter can prep the follow-on, but the goal is blank.',
+    recommendedAction: 'Set the goal: agree which site would pilot, and who owns the rollout',
+    priority: 5,
+  },
+];
+
+export const hunterDirectory = [
+  { kind: 'company' as const, id: 'techcorp', name: 'TechCorp Global', meta: 'Follow-on · technical validation', firstCall: false },
+  { kind: 'company' as const, id: 'acme-europe', name: 'Acme Europe', meta: 'Follow-on · proposal', firstCall: false },
+  { kind: 'company' as const, id: 'globex', name: 'Globex', meta: 'Follow-on · proposal', firstCall: false },
+  { kind: 'company' as const, id: 'midway', name: 'Midway Healthcare', meta: 'Follow-on · discovery', firstCall: false },
+  { kind: 'company' as const, id: 'helios', name: 'Helios Bank', meta: 'Follow-on · negotiation', firstCall: false },
+  { kind: 'company' as const, id: 'northwind', name: 'Northwind Logistics', meta: 'Follow-on · discovery', firstCall: false },
+  { kind: 'company' as const, id: 'brightline', name: 'Brightline Retail', meta: 'Follow-on · discovery', firstCall: false },
+  { kind: 'contact' as const, id: 'tc-sarah', name: 'Sarah Chen', meta: 'VP RevOps · TechCorp Global', companyId: 'techcorp', firstCall: false },
+  { kind: 'contact' as const, id: 'tc-david', name: 'David Kim', meta: 'IT Security · TechCorp Global', companyId: 'techcorp', firstCall: false },
+  { kind: 'contact' as const, id: 'tc-james', name: 'James Park', meta: 'CRO · TechCorp Global', companyId: 'techcorp', firstCall: false },
+  { kind: 'contact' as const, id: 'acme-lena', name: 'Lena Vogel', meta: 'VP Operations · Acme Europe', companyId: 'acme-europe', firstCall: false },
+  { kind: 'contact' as const, id: 'nw-omar', name: 'Omar Shah', meta: 'Director of Ops · Northwind', companyId: 'northwind', firstCall: false },
 ];
 
 // Performance metrics

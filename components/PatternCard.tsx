@@ -1,60 +1,55 @@
+'use client';
+
+import { useState } from 'react';
 import { Pattern } from '@/lib/types/domain';
 import EvidenceBadge from './EvidenceBadge';
 
 interface PatternCardProps {
   pattern: Pattern;
   showAffectedDeals?: boolean;
+  onUse?: (pattern: Pattern) => void;
 }
 
-export default function PatternCard({ pattern, showAffectedDeals = false }: PatternCardProps) {
+export default function PatternCard({ pattern, showAffectedDeals = false, onUse }: PatternCardProps) {
+  const [open, setOpen] = useState(false);
+  const [used, setUsed] = useState(false);
+
   return (
-    <div className="card border-piloteer-hair-2 hover:border-piloteer-hair-2 transition-colors">
-      <div className="flex items-start justify-between mb-6 gap-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-4">
-            <EvidenceBadge level={pattern.evidence.level} />
-            <span className="eyebrow">
-              {pattern.type.replace('-', ' × ')}
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-piloteer-ink leading-tight">{pattern.pattern}</h3>
-        </div>
+    <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+      <div className="flex items-center gap-3">
+        <EvidenceBadge level={pattern.evidence.level} />
+        <span className="text-xs uppercase tracking-[0.16em] text-piloteer-mute">{pattern.type.replace('-', ' × ')}</span>
       </div>
-
-      <div className="space-y-6">
-        <div>
-          <div className="eyebrow mb-3">Why it matters</div>
-          <p className="ctx leading-relaxed">{pattern.meaning}</p>
-        </div>
-
-        {pattern.evidence.details && pattern.evidence.details.length > 0 && (
-          <div>
-            <div className="eyebrow mb-3">
-              Evidence ({pattern.evidence.interactions} interactions)
-            </div>
-            <ul className="space-y-2">
-              {pattern.evidence.details.map((detail, idx) => (
-                <li key={idx} className="ctx leading-relaxed flex items-start gap-3">
-                  <span className="text-piloteer-verified mt-1">·</span>
-                  <span>{detail}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="pt-6 border-t border-piloteer-hair">
-          <div className="eyebrow mb-3">Recommended action</div>
-          <p className="text-lg font-semibold text-piloteer-ink leading-relaxed">{pattern.recommendedAction}</p>
-        </div>
-
-        {showAffectedDeals && pattern.affectedDeals && (
-          <div className="pt-4 text-sm ctx font-mono border-t border-piloteer-hair">
-            Affecting {pattern.affectedDeals} deals
-            {pattern.affectedValue && ` · $${(pattern.affectedValue / 1000).toFixed(0)}K`}
-          </div>
-        )}
+      <h3 className="mt-4 text-2xl font-bold leading-tight tracking-editorial">{pattern.pattern}</h3>
+      <p className="mt-3 max-w-3xl text-piloteer-metal leading-relaxed">{pattern.meaning}</p>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+          {open ? 'Hide evidence' : `Evidence · ${pattern.evidence.interactions}`}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setUsed(true);
+            onUse?.(pattern);
+          }}
+          className={`rounded-full px-4 py-2 text-sm font-semibold ${used ? 'bg-piloteer-verified text-black' : 'bg-white text-black'}`}
+        >
+          {used ? 'Added to next focus' : 'Use this'}
+        </button>
+        {showAffectedDeals && pattern.affectedDeals ? (
+          <span className="text-sm text-piloteer-mute">Seen on {pattern.affectedDeals} deals</span>
+        ) : null}
       </div>
-    </div>
+      {open && (
+        <div className="mt-5 border-t border-white/10 pt-5">
+          <p className="text-sm font-semibold">{pattern.recommendedAction}</p>
+          <ul className="mt-3 space-y-2">
+            {(pattern.evidence.details || ['Still gathering the interaction quotes.']).map((detail) => (
+              <li key={detail} className="text-sm text-piloteer-metal">· {detail}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </article>
   );
 }

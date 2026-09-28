@@ -59,6 +59,7 @@ export interface MarketSignal {
 export interface ProductTeach {
   id: string;
   name: string;
+  sample?: boolean;
   sources: TeachSource[];
   description: string;
   personas: Persona[];
@@ -87,11 +88,20 @@ export interface DealStage {
   description?: string;
 }
 
+export interface CompanyContact {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+}
+
 export interface CompanyOverview {
   industry: string;
   customerSegment: CustomerSegment[];
   typicalDealSize: string;
   typicalSalesCycle: string;
+  website: string;
+  contacts: CompanyContact[];
 }
 
 export interface Contradiction {
@@ -109,7 +119,7 @@ export interface TeachState {
   currentStep: number;
   companyOverview: CompanyOverview;
   dealStages: DealStage[];
-  salesFramework: SalesFramework;
+  salesFramework: SalesFramework | null;
   customFrameworkName?: string;
   customFrameworkNotes?: string;
   products: ProductTeach[];
@@ -126,6 +136,7 @@ export interface TeachState {
 export type TeachStepId = 
   | 'welcome'
   | 'company-overview'
+  | 'products'
   | 'deal-stages'
   | 'sales-framework'
   | 'product-about'
