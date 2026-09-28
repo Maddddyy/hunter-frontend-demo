@@ -132,31 +132,27 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
       return { ...state, activeProductIndex: action.index };
     
     case 'UPDATE_PRODUCT': {
-      const updatedState = {
+      return {
         ...state,
-        products: state.products.map(p =>
-          p.id === action.productId ? { ...p, [action.field]: action.value } : p
-        ),
+        products: state.products.map(p => {
+          if (p.id !== action.productId) return p;
+          
+          // Update the field
+          const updatedProduct = { ...p, [action.field]: action.value };
+          
+          // Recalculate completed sections
+          return {
+            ...updatedProduct,
+            completedSections: {
+              about: updatedProduct.description.length > 20 && updatedProduct.sources.length > 0,
+              personas: updatedProduct.personas.length > 0,
+              keySignals: updatedProduct.keyQuestions.length > 0 && updatedProduct.keyObjectives.length > 0,
+              competitive: updatedProduct.competitors.length > 0,
+              marketInfo: updatedProduct.buyerEnvironment.length > 0 || updatedProduct.companyProductEnvironment.length > 0,
+            },
+          };
+        }),
       };
-      // Update completed sections after product update
-      const product = updatedState.products.find(p => p.id === action.productId);
-      if (product) {
-        updatedState.products = updatedState.products.map(p =>
-          p.id === action.productId
-            ? {
-                ...p,
-                completedSections: {
-                  about: p.description.length > 20 && p.sources.length > 0,
-                  personas: p.personas.length > 0,
-                  keySignals: p.keyQuestions.length > 0 && p.keyObjectives.length > 0,
-                  competitive: p.competitors.length > 0,
-                  marketInfo: p.buyerEnvironment.length > 0 || p.companyProductEnvironment.length > 0,
-                },
-              }
-            : p
-        );
-      }
-      return updatedState;
     }
     
     case 'ADD_PRODUCT_SOURCE':
@@ -437,30 +433,16 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
       };
     
     case 'DRAFT_FROM_SOURCES': {
-      // Mock: Generate rich distinct content for the product
+      // Mock: Generate rich distinct content for the product from sources
       const productIndex = state.products.findIndex(p => p.id === action.productId);
       if (productIndex === -1) return state;
 
       const product = state.products[productIndex];
       const isCommander = product.id === 'commander';
 
-      // Generate distinct mock data based on product
-      const draftedProduct: ProductTeach = {
-        ...product,
-        draftGenerated: true,
-        completedSections: {
-          about: true,
-          personas: true,
-          keySignals: true,
-          competitive: true,
-          marketInfo: true,
-        },
-      };
-
-      // Only add if not already present
-      if (product.personas.length === 0) {
-        if (isCommander) {
-          draftedProduct.personas = [
+      // Generate distinct mock data based on product - always replace/add
+      const draftPersonas: Persona[] = isCommander
+        ? [
             {
               id: `p-${Date.now()}-1`,
               name: 'Chief Revenue Officer',
@@ -473,9 +455,8 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
               role: 'Primary User',
               notes: 'Manages frontline sales managers and needs to know which deals and which reps need intervention. Values coaching efficiency and wants to spend time on highest-leverage activities. Concerned about creating more reporting overhead for managers.',
             },
-          ];
-        } else {
-          draftedProduct.personas = [
+          ]
+        : [
             {
               id: `p-${Date.now()}-1`,
               name: 'Chief Revenue Officer',
@@ -489,112 +470,120 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
               notes: 'Owns the sales tech stack and process optimization. Values clean data, integration capabilities, and evidence-based coaching signals. Often burned by previous AI tools that promised insights but delivered noise.',
             },
           ];
-        }
-      }
 
-      if (product.keyQuestions.length === 0) {
-        draftedProduct.keyQuestions = isCommander
-          ? [
-              'How do you currently know which deals need your attention?',
-              'What percentage of pipeline surprises could you have seen coming?',
-              'How much time do your sales managers spend in status meetings vs coaching?',
-            ]
-          : [
-              'What does success look like for your revenue team this quarter?',
-              'How do you currently know when a deal is gaining or losing momentum?',
-              'What happens when your best seller takes time off or leaves?',
-            ];
-      }
+      const draftKeyQuestions: string[] = isCommander
+        ? [
+            'How do you currently know which deals need your attention?',
+            'What percentage of pipeline surprises could you have seen coming?',
+            'How much time do your sales managers spend in status meetings vs coaching?',
+          ]
+        : [
+            'What does success look like for your revenue team this quarter?',
+            'How do you currently know when a deal is gaining or losing momentum?',
+            'What happens when your best seller takes time off or leaves?',
+          ];
 
-      if (product.keyObjectives.length === 0) {
-        draftedProduct.keyObjectives = isCommander
-          ? [
-              'Increase pipeline predictability and reduce forecast surprises',
-              'Identify intervention opportunities before deals slip',
-              'Focus coaching time on highest-impact activities',
-            ]
-          : [
-              'Increase deal velocity across the full pipeline',
-              'Scale best-seller behaviors to entire team',
-              'Reduce time to productivity for new reps',
-            ];
-      }
+      const draftKeyObjectives: string[] = isCommander
+        ? [
+            'Increase pipeline predictability and reduce forecast surprises',
+            'Identify intervention opportunities before deals slip',
+            'Focus coaching time on highest-impact activities',
+          ]
+        : [
+            'Increase deal velocity across the full pipeline',
+            'Scale best-seller behaviors to entire team',
+            'Reduce time to productivity for new reps',
+          ];
 
-      if (product.differentiators.length === 0) {
-        draftedProduct.differentiators = isCommander
-          ? [
-              {
-                id: `d-${Date.now()}-1`,
-                they: 'Dashboards showing lagging indicators and historical trends',
-                we: 'Real-time pattern detection and forward-looking momentum signals',
-              },
-              {
-                id: `d-${Date.now()}-2`,
-                they: 'Generic reports requiring manual interpretation',
-                we: 'Intelligent surfaces that tell you what needs attention and why',
-              },
-            ]
-          : [
-              {
-                id: `d-${Date.now()}-1`,
-                they: 'Record and analyze conversations after the call ends',
-                we: 'Provide real-time guidance while the buyer is still engaged',
-              },
-              {
-                id: `d-${Date.now()}-2`,
-                they: 'Create surveillance concerns with always-on recording',
-                we: 'Private seller guidance with no-monitor commitment',
-              },
-            ];
-      }
+      const draftDifferentiators: Differentiator[] = isCommander
+        ? [
+            {
+              id: `d-${Date.now()}-1`,
+              they: 'Dashboards showing lagging indicators and historical trends',
+              we: 'Real-time pattern detection and forward-looking momentum signals',
+            },
+            {
+              id: `d-${Date.now()}-2`,
+              they: 'Generic reports requiring manual interpretation',
+              we: 'Intelligent surfaces that tell you what needs attention and why',
+            },
+          ]
+        : [
+            {
+              id: `d-${Date.now()}-1`,
+              they: 'Record and analyze conversations after the call ends',
+              we: 'Provide real-time guidance while the buyer is still engaged',
+            },
+            {
+              id: `d-${Date.now()}-2`,
+              they: 'Create surveillance concerns with always-on recording',
+              we: 'Private seller guidance with no-monitor commitment',
+            },
+          ];
 
-      if (product.objections.length === 0) {
-        draftedProduct.objections = isCommander
-          ? [
-              {
-                id: `o-${Date.now()}-1`,
-                objection: 'We already have Clari / Salesforce dashboards',
-                counter: "Commander doesn't replace Clari—it makes it more actionable. Clari shows forecast roll-ups and deal scores. Commander shows which deals need intervention right now and what pattern is causing the stall.",
-              },
-            ]
-          : [
-              {
-                id: `o-${Date.now()}-1`,
-                objection: 'How is this different from Gong or Chorus?',
-                counter: 'Gong records and analyzes after the call. Hunter guides during, while the conversation is happening. Think of Gong as the film room; Hunter is the coach on the sideline during the game.',
-              },
-            ];
-      }
+      const draftObjections: Objection[] = isCommander
+        ? [
+            {
+              id: `o-${Date.now()}-1`,
+              objection: 'We already have Clari / Salesforce dashboards',
+              counter: "Commander doesn't replace Clari—it makes it more actionable. Clari shows forecast roll-ups and deal scores. Commander shows which deals need intervention right now and what pattern is causing the stall.",
+            },
+          ]
+        : [
+            {
+              id: `o-${Date.now()}-1`,
+              objection: 'How is this different from Gong or Chorus?',
+              counter: 'Gong records and analyzes after the call. Hunter guides during, while the conversation is happening. Think of Gong as the film room; Hunter is the coach on the sideline during the game.',
+            },
+          ];
 
-      if (product.competitors.length === 0) {
-        draftedProduct.competitors = isCommander
-          ? [
-              {
-                id: `c-${Date.now()}-1`,
-                name: 'Clari',
-                profile: 'Revenue operations platform focused on forecasting accuracy, pipeline management, and deal inspection. Strong in forecast roll-ups and executive reporting.',
-              },
-            ]
-          : [
-              {
-                id: `c-${Date.now()}-1`,
-                name: 'Gong',
-                profile: 'Market leader in conversation intelligence and revenue intelligence platform. Strong in post-call analysis, trend identification, and manager dashboards.',
-              },
-            ];
-      }
+      const draftCompetitors: Competitor[] = isCommander
+        ? [
+            {
+              id: `c-${Date.now()}-1`,
+              name: 'Clari',
+              profile: 'Revenue operations platform focused on forecasting accuracy, pipeline management, and deal inspection. Strong in forecast roll-ups and executive reporting.',
+            },
+          ]
+        : [
+            {
+              id: `c-${Date.now()}-1`,
+              name: 'Gong',
+              profile: 'Market leader in conversation intelligence and revenue intelligence platform. Strong in post-call analysis, trend identification, and manager dashboards.',
+            },
+          ];
 
-      if (product.buyerEnvironment.length === 0) {
-        draftedProduct.buyerEnvironment = isCommander
-          ? [
-              { id: `be-${Date.now()}-1`, signal: 'Leadership mentions being surprised by deals slipping at the last minute' },
-              { id: `be-${Date.now()}-2`, signal: 'Sales managers spending excessive time in pipeline review meetings' },
-            ]
-          : [
-              { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool' },
-              { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
-            ];
-      }
+      const draftBuyerEnvironment: MarketSignal[] = isCommander
+        ? [
+            { id: `be-${Date.now()}-1`, signal: 'Leadership mentions being surprised by deals slipping at the last minute' },
+            { id: `be-${Date.now()}-2`, signal: 'Sales managers spending excessive time in pipeline review meetings' },
+          ]
+        : [
+            { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool' },
+            { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
+          ];
+
+      // Build the drafted product by replacing/merging content
+      const draftedProduct: ProductTeach = {
+        ...product,
+        personas: draftPersonas,
+        keyQuestions: draftKeyQuestions,
+        keyObjectives: draftKeyObjectives,
+        differentiators: draftDifferentiators,
+        objections: draftObjections,
+        competitors: draftCompetitors,
+        buyerEnvironment: draftBuyerEnvironment,
+        companyProductEnvironment: product.companyProductEnvironment, // Keep existing
+        dealEnvironmentSignals: product.dealEnvironmentSignals, // Keep existing
+        draftGenerated: true,
+        completedSections: {
+          about: true,
+          personas: true,
+          keySignals: true,
+          competitive: true,
+          marketInfo: true,
+        },
+      };
 
       return {
         ...state,
