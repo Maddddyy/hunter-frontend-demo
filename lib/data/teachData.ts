@@ -174,55 +174,67 @@ function createHunterProduct(): ProductTeach {
     buyerEnvironment: [
       {
         id: 'be1',
-        signal: 'Mentions "AI fatigue" or concerns about adding another AI tool to the stack',
+        signal: 'Mentions "AI fatigue" or concerns about adding another AI tool to an already complex tech stack',
       },
       {
         id: 'be2',
-        signal: 'Previous investment in conversation intelligence (Gong, Chorus) with mixed adoption',
+        signal: 'Previous investment in conversation intelligence (Gong, Chorus) with mixed adoption or unclear ROI',
       },
       {
         id: 'be3',
-        signal: 'RevOps team overwhelmed with tool sprawl and integration complexity',
+        signal: 'RevOps team overwhelmed with tool sprawl, integration complexity, and data quality challenges',
       },
       {
         id: 'be4',
-        signal: 'Sales team resistance to being "watched" or recorded',
+        signal: 'Sales team resistance to being "watched" or recorded - concerns about trust and micromanagement',
+      },
+      {
+        id: 'be5',
+        signal: 'Leadership pressure to improve win rates and deal velocity without expanding headcount',
       },
     ],
     companyProductEnvironment: [
       {
         id: 'cp1',
-        signal: 'Inconsistent rep performance—big gap between top and middle performers',
+        signal: 'Inconsistent rep performance - significant gap between top 20% and middle 60% performers',
       },
       {
         id: 'cp2',
-        signal: 'Long ramp time for new sellers (6+ months to productivity)',
+        signal: 'Long ramp time for new sellers (6+ months to full productivity) hurting growth plans',
       },
       {
         id: 'cp3',
-        signal: 'Managers spending 10+ hours per week reviewing call recordings',
+        signal: 'Managers spending 10+ hours per week reviewing call recordings - coaching doesn\'t scale',
       },
       {
         id: 'cp4',
-        signal: 'Difficulty scaling coaching as team grows',
+        signal: 'Difficulty scaling coaching and best-practice sharing as team grows beyond 20-30 reps',
+      },
+      {
+        id: 'cp5',
+        signal: 'Recent reorg, new sales process, or methodology change creating inconsistency',
       },
     ],
     dealEnvironmentSignals: [
       {
         id: 'de1',
-        signal: 'Champion mentions board pressure or urgent timeline',
+        signal: 'Champion mentions board pressure, urgent timeline, or fiscal year-end deadline',
       },
       {
         id: 'de2',
-        signal: 'Security or IT asks detailed questions about data handling and privacy',
+        signal: 'Security or IT asks detailed questions about data handling, privacy, and no-recording commitment',
       },
       {
         id: 'de3',
-        signal: 'Enablement stakeholder asks about change management and training overhead',
+        signal: 'Enablement stakeholder asks about change management, adoption strategy, and training overhead',
       },
       {
         id: 'de4',
         signal: 'Buyer shares frustration with current tools not delivering promised insights',
+      },
+      {
+        id: 'de5',
+        signal: 'Economic buyer asks for ROI evidence, customer references, or proof of concept structure',
       },
     ],
     draftGenerated: false,
@@ -364,55 +376,67 @@ function createCommanderProduct(): ProductTeach {
     buyerEnvironment: [
       {
         id: 'be1',
-        signal: 'Leadership team mentions "surprised by deals slipping at the last minute"',
+        signal: 'Leadership team mentions being "surprised by deals slipping at the last minute" or forecast misses',
       },
       {
         id: 'be2',
-        signal: 'Sales managers spending excessive time in pipeline review meetings',
+        signal: 'Sales managers spending excessive time in pipeline review meetings without actionable outcomes',
       },
       {
         id: 'be3',
-        signal: 'Existing dashboards unused or generating more questions than answers',
+        signal: 'Existing dashboards unused, generating more questions than answers, or not driving decisions',
       },
       {
         id: 'be4',
-        signal: 'Leadership struggling to scale coaching across growing sales organization',
+        signal: 'Leadership struggling to scale coaching and attention across a growing sales organization',
+      },
+      {
+        id: 'be5',
+        signal: 'CRO or VP Sales mentions needing to "know where to focus" or "which deals need intervention"',
       },
     ],
     companyProductEnvironment: [
       {
         id: 'cp1',
-        signal: 'Frequent forecast misses or pipeline surprises',
+        signal: 'Frequent forecast misses or pipeline surprises quarter over quarter',
       },
       {
         id: 'cp2',
-        signal: 'Leadership attention spread thin across too many deals',
+        signal: 'Leadership attention spread thin across too many deals - struggling to prioritize intervention',
       },
       {
         id: 'cp3',
-        signal: 'Sales managers reactive to problems rather than proactive on opportunities',
+        signal: 'Sales managers reactive to problems rather than proactive on opportunities - always firefighting',
       },
       {
         id: 'cp4',
-        signal: 'Disconnect between activity metrics and actual revenue outcomes',
+        signal: 'Disconnect between activity metrics and actual revenue outcomes - can\'t predict what works',
+      },
+      {
+        id: 'cp5',
+        signal: 'Growing sales org (30+ reps) making it impossible for leaders to have pulse on every deal',
       },
     ],
     dealEnvironmentSignals: [
       {
         id: 'de1',
-        signal: 'CRO asks about forecast accuracy improvement with specific metrics',
+        signal: 'CRO asks about forecast accuracy improvement with specific metrics or benchmarks',
       },
       {
         id: 'de2',
-        signal: 'VP Sales mentions difficulty prioritizing coaching time across team',
+        signal: 'VP Sales mentions difficulty prioritizing coaching time across team - doesn\'t know where to focus',
       },
       {
         id: 'de3',
-        signal: 'RevOps concerned about adding another system to maintain',
+        signal: 'RevOps concerned about adding another system to maintain or integrate',
       },
       {
         id: 'de4',
-        signal: 'Leadership mentions "too many dashboards" or "reporting fatigue"',
+        signal: 'Leadership mentions "too many dashboards," "reporting fatigue," or "dashboard graveyard"',
+      },
+      {
+        id: 'de5',
+        signal: 'Sales leader asks "how is this different from Clari?" or "what does this replace?"',
       },
     ],
     draftGenerated: false,

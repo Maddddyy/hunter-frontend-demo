@@ -555,12 +555,38 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
 
       const draftBuyerEnvironment: MarketSignal[] = isCommander
         ? [
-            { id: `be-${Date.now()}-1`, signal: 'Leadership mentions being surprised by deals slipping at the last minute' },
+            { id: `be-${Date.now()}-1`, signal: 'Leadership team mentions being "surprised by deals slipping at the last minute"' },
             { id: `be-${Date.now()}-2`, signal: 'Sales managers spending excessive time in pipeline review meetings' },
+            { id: `be-${Date.now()}-3`, signal: 'CRO mentions needing to "know where to focus" or "which deals need intervention"' },
           ]
         : [
-            { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool' },
+            { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool to tech stack' },
             { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
+            { id: `be-${Date.now()}-3`, signal: 'Sales team resistance to being "watched" or recorded' },
+          ];
+
+      const draftCompanyEnvironment: MarketSignal[] = isCommander
+        ? [
+            { id: `cp-${Date.now()}-1`, signal: 'Frequent forecast misses or pipeline surprises quarter over quarter' },
+            { id: `cp-${Date.now()}-2`, signal: 'Leadership attention spread thin across too many deals' },
+            { id: `cp-${Date.now()}-3`, signal: 'Sales managers reactive to problems rather than proactive on opportunities' },
+          ]
+        : [
+            { id: `cp-${Date.now()}-1`, signal: 'Inconsistent rep performance—big gap between top and middle performers' },
+            { id: `cp-${Date.now()}-2`, signal: 'Long ramp time for new sellers (6+ months to productivity)' },
+            { id: `cp-${Date.now()}-3`, signal: 'Managers spending 10+ hours per week reviewing call recordings' },
+          ];
+
+      const draftDealSignals: MarketSignal[] = isCommander
+        ? [
+            { id: `de-${Date.now()}-1`, signal: 'CRO asks about forecast accuracy improvement with specific metrics' },
+            { id: `de-${Date.now()}-2`, signal: 'VP Sales mentions difficulty prioritizing coaching time across team' },
+            { id: `de-${Date.now()}-3`, signal: 'Sales leader asks "how is this different from Clari?"' },
+          ]
+        : [
+            { id: `de-${Date.now()}-1`, signal: 'Champion mentions board pressure or urgent timeline' },
+            { id: `de-${Date.now()}-2`, signal: 'Security asks detailed questions about data handling and privacy' },
+            { id: `de-${Date.now()}-3`, signal: 'Economic buyer asks for ROI evidence or customer references' },
           ];
 
       // Product-specific drafted descriptions
@@ -579,8 +605,8 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
         objections: draftObjections,
         competitors: draftCompetitors,
         buyerEnvironment: draftBuyerEnvironment,
-        companyProductEnvironment: product.companyProductEnvironment, // Keep existing
-        dealEnvironmentSignals: product.dealEnvironmentSignals, // Keep existing
+        companyProductEnvironment: draftCompanyEnvironment,
+        dealEnvironmentSignals: draftDealSignals,
         draftGenerated: true,
         completedSections: {
           about: true,
@@ -1594,7 +1620,7 @@ function ProductKeySignalsStep({
   setSubStep: (step: 'questions' | 'objectives' | 'differentiators' | 'objections') => void;
 }) {
   const subSteps = [
-    { id: 'questions' as const, label: 'Key Questions', completed: product.keyQuestions.length > 0 },
+    { id: 'questions' as const, label: 'Discovery Questions', completed: product.keyQuestions.length > 0 },
     { id: 'objectives' as const, label: 'Key Objectives', completed: product.keyObjectives.length > 0 },
     { id: 'differentiators' as const, label: 'Differentiators', completed: product.differentiators.length > 0 },
     { id: 'objections' as const, label: 'Objections & Counters', completed: product.objections.length > 0 },
@@ -1690,7 +1716,7 @@ function KeyQuestionsWorkshop({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-bold text-piloteer-ink mb-2">Key Questions</h3>
+        <h3 className="text-xl font-bold text-piloteer-ink mb-2">Discovery Questions</h3>
         <p className="text-sm ctx">
           Define the signals Hunter should listen for during real conversations. These shape live prompts, coaching, and decision detection.
         </p>
@@ -2148,100 +2174,131 @@ function ProductMarketInfoStep({
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
 }) {
-  const [newSignal, setNewSignal] = useState({ category: 'buyerEnvironment', signal: '' });
-
-  const handleAddSignal = (category: string) => {
-    if (newSignal.signal.trim() && newSignal.category === category) {
-      const signal: MarketSignal = {
-        id: `signal-${Date.now()}`,
-        signal: newSignal.signal,
-      };
-      dispatch({ type: 'ADD_MARKET_SIGNAL', productId: product.id, category, signal });
-      setNewSignal({ category, signal: '' });
-      showToast('Signal added');
-    }
+  const handleAddSignal = (category: 'buyerEnvironment' | 'companyProductEnvironment' | 'dealEnvironmentSignals') => {
+    const signal: MarketSignal = {
+      id: `signal-${Date.now()}`,
+      signal: '',
+    };
+    dispatch({ type: 'ADD_MARKET_SIGNAL', productId: product.id, category, signal });
+    showToast('Signal added');
   };
 
-  const renderSignalSection = (
+  const renderSignalWorkshop = (
     category: 'buyerEnvironment' | 'companyProductEnvironment' | 'dealEnvironmentSignals',
     title: string,
-    description: string
+    description: string,
+    icon: React.ReactNode
   ) => {
     const signals = product[category] as MarketSignal[];
 
     return (
-      <div className="card bg-gradient-to-br from-piloteer-surface to-piloteer-black border-piloteer-hair-2">
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-piloteer-ink mb-1">{title}</h3>
-          <p className="text-sm ctx">{description}</p>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          {signals.map((signal) => (
-            <div key={signal.id} className="flex items-start gap-3 bg-piloteer-surface-2 border border-piloteer-hair rounded-lg p-3">
-              <span className="flex-1 text-sm text-piloteer-ink">{signal.signal}</span>
-              <button
-                onClick={() => {
-                  dispatch({ type: 'REMOVE_MARKET_SIGNAL', productId: product.id, category, signalId: signal.id });
-                  showToast('Signal removed');
-                }}
-                className="text-piloteer-signal hover:text-piloteer-ink transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newSignal.category === category ? newSignal.signal : ''}
-            onChange={(e) => setNewSignal({ category, signal: e.target.value })}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddSignal(category)}
-            placeholder="Add a signal..."
-            className="flex-1 bg-piloteer-surface-2 border border-piloteer-hair-2 rounded-lg px-3 py-2 text-sm text-piloteer-ink focus:border-piloteer-focus focus:outline-none transition-colors"
-          />
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-piloteer-surface-2 rounded-lg flex items-center justify-center">
+            {icon}
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-piloteer-ink">{title}</h3>
+            <p className="text-sm ctx">{description}</p>
+          </div>
           <button
             onClick={() => handleAddSignal(category)}
-            disabled={newSignal.category !== category || !newSignal.signal.trim()}
-            className="btn-secondary text-sm disabled:opacity-50"
+            className="btn-secondary text-sm"
           >
-            + Add
+            + Add Signal
           </button>
         </div>
+
+        {signals.length === 0 ? (
+          <div className="card bg-piloteer-black border-piloteer-hair-2 text-center py-12">
+            <p className="text-piloteer-mute mb-4">No signals yet. Add your first {title.toLowerCase()} signal.</p>
+            <button onClick={() => handleAddSignal(category)} className="btn-primary">
+              + Add Signal
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {signals.map((signal) => (
+              <div
+                key={signal.id}
+                className="card bg-gradient-to-br from-piloteer-surface to-piloteer-black border-piloteer-hair-2"
+              >
+                <div className="flex items-start gap-4">
+                  <textarea
+                    value={signal.signal}
+                    onChange={(e) => {
+                      const updatedSignals = (product[category] as MarketSignal[]).map((s) =>
+                        s.id === signal.id ? { ...s, signal: e.target.value } : s
+                      );
+                      dispatch({ type: 'UPDATE_PRODUCT', productId: product.id, field: category, value: updatedSignals });
+                    }}
+                    rows={2}
+                    className="flex-1 bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-ink text-sm focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed resize-none"
+                    placeholder={`Describe a ${title.toLowerCase()} signal...`}
+                  />
+                  <button
+                    onClick={() => {
+                      dispatch({ type: 'REMOVE_MARKET_SIGNAL', productId: product.id, category, signalId: signal.id });
+                      showToast('Signal removed');
+                    }}
+                    className="text-piloteer-signal hover:text-piloteer-ink transition-colors mt-1"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <div className="space-y-8">
-      <p className="text-lg ctx leading-relaxed">
-        Surface the market context that shapes how buyers engage with <strong className="text-piloteer-ink">{product.name}</strong>.
-      </p>
+      <div>
+        <p className="text-lg ctx leading-relaxed mb-2">
+          Surface the market context that shapes how buyers engage with <strong className="text-piloteer-ink">{product.name}</strong>.
+        </p>
+        <p className="text-sm ctx">
+          These signals help Hunter detect patterns and recommend contextual moves during live conversations.
+        </p>
+      </div>
 
-      {renderSignalSection(
+      {renderSignalWorkshop(
         'buyerEnvironment',
         'Buyer Environment',
-        'External factors and concerns buyers bring to the conversation'
+        'External factors, concerns, and market conditions buyers bring to the conversation',
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-piloteer-verified">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
       )}
 
-      {renderSignalSection(
+      {renderSignalWorkshop(
         'companyProductEnvironment',
         'Company & Product Environment',
-        'Internal challenges or initiatives that make this product relevant'
+        'Internal challenges, initiatives, or organizational changes that make this product relevant',
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-piloteer-verified">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
       )}
 
-      {renderSignalSection(
+      {renderSignalWorkshop(
         'dealEnvironmentSignals',
         'Deal Environment Signals',
-        'Specific signals during the deal cycle that indicate progression or risk'
+        'Specific signals during the deal cycle that indicate progression, stall risk, or champion strength',
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-piloteer-verified">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
       )}
 
       <div className="pt-6 text-sm ctx bg-piloteer-surface-2 p-6 rounded-xl border border-piloteer-hair leading-relaxed">
-        <strong className="text-piloteer-ink">Market intelligence matters:</strong> Hunter uses these signals to detect patterns and recommend contextual moves. The more specific your signals, the sharper Hunter's guidance.
+        <strong className="text-piloteer-ink">Why market intelligence matters:</strong> Hunter uses these signals to detect patterns in real time and recommend moves that match the buyer's context. The more specific and behavioral your signals, the sharper Hunter's guidance becomes during live conversations.
       </div>
     </div>
   );
