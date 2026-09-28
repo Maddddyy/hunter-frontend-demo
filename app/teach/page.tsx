@@ -60,14 +60,27 @@ type TeachAction =
   | { type: 'ADD_MARKET_SIGNAL'; productId: string; category: string; signal: MarketSignal }
   | { type: 'REMOVE_MARKET_SIGNAL'; productId: string; category: string; signalId: string }
   | { type: 'DRAFT_FROM_SOURCES'; productId: string }
+  | { type: 'UPDATE_COMPLETED_SECTIONS'; productId: string }
   | { type: 'RESOLVE_CONTRADICTION'; contradictionId: string; resolution: 'option1' | 'option2' }
   | { type: 'TOGGLE_VISIBILITY'; field: string }
   | { type: 'GO_LIVE' };
 
 function teachReducer(state: TeachState, action: TeachAction): TeachState {
   switch (action.type) {
-    case 'SET_STEP':
-      return { ...state, currentStep: action.step };
+    case 'SET_STEP': {
+      // Derive activeProductIndex from step number
+      // Steps 0-2: org (no product)
+      // Steps 3-7: product 0
+      // Steps 8-12: product 1
+      // Steps 13+: finalize (no product)
+      let productIndex = state.activeProductIndex;
+      if (action.step >= 3 && action.step <= 7) {
+        productIndex = 0;
+      } else if (action.step >= 8 && action.step <= 12) {
+        productIndex = 1;
+      }
+      return { ...state, currentStep: action.step, activeProductIndex: productIndex };
+    }
     
     case 'UPDATE_COMPANY_OVERVIEW':
       return {
@@ -117,13 +130,33 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
     case 'SET_ACTIVE_PRODUCT':
       return { ...state, activeProductIndex: action.index };
     
-    case 'UPDATE_PRODUCT':
-      return {
+    case 'UPDATE_PRODUCT': {
+      const updatedState = {
         ...state,
         products: state.products.map(p =>
           p.id === action.productId ? { ...p, [action.field]: action.value } : p
         ),
       };
+      // Update completed sections after product update
+      const product = updatedState.products.find(p => p.id === action.productId);
+      if (product) {
+        updatedState.products = updatedState.products.map(p =>
+          p.id === action.productId
+            ? {
+                ...p,
+                completedSections: {
+                  about: p.description.length > 20 && p.sources.length > 0,
+                  personas: p.personas.length > 0,
+                  keySignals: p.keyQuestions.length > 0 && p.keyObjectives.length > 0,
+                  competitive: p.competitors.length > 0,
+                  marketInfo: p.buyerEnvironment.length > 0 || p.companyProductEnvironment.length > 0,
+                },
+              }
+            : p
+        );
+      }
+      return updatedState;
+    }
     
     case 'ADD_PRODUCT_SOURCE':
       return {
@@ -387,26 +420,269 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
         ),
       };
     
-    case 'DRAFT_FROM_SOURCES':
-      // Mock: mark as drafted and show toast
+    case 'DRAFT_FROM_SOURCES': {
+      // Mock: Generate rich distinct content for the product
+      const productIndex = state.products.findIndex(p => p.id === action.productId);
+      if (productIndex === -1) return state;
+
+      const product = state.products[productIndex];
+      const isCommander = product.id === 'commander';
+
+      // Generate distinct mock data based on product
+      const draftedProduct: ProductTeach = {
+        ...product,
+        draftGenerated: true,
+        completedSections: {
+          about: true,
+          personas: true,
+          keySignals: true,
+          competitive: true,
+          marketInfo: true,
+        },
+      };
+
+      // Only add if not already present
+      if (product.personas.length === 0) {
+        if (isCommander) {
+          draftedProduct.personas = [
+            {
+              id: `p-${Date.now()}-1`,
+              name: 'Chief Revenue Officer',
+              role: 'Primary User / Economic Buyer',
+              notes: 'Owns revenue number and needs to know where the business is headed before it gets there. Cares about pipeline predictability, early warning signals, and where to focus limited attention. Asks about forecast accuracy improvement and executive dashboard clarity.',
+            },
+            {
+              id: `p-${Date.now()}-2`,
+              name: 'VP of Sales',
+              role: 'Primary User',
+              notes: 'Manages frontline sales managers and needs to know which deals and which reps need intervention. Values coaching efficiency and wants to spend time on highest-leverage activities. Concerned about creating more reporting overhead for managers.',
+            },
+          ];
+        } else {
+          draftedProduct.personas = [
+            {
+              id: `p-${Date.now()}-1`,
+              name: 'Chief Revenue Officer',
+              role: 'Economic Buyer',
+              notes: 'Cares about predictable revenue growth and scaling best-seller behaviors across the team. Typically asks about ROI evidence, implementation timeline, and how this fits with existing sales tech stack. Concerned about adoption and proving value to board within first 90 days.',
+            },
+            {
+              id: `p-${Date.now()}-2`,
+              name: 'VP of Revenue Operations',
+              role: 'Champion / Technical Buyer',
+              notes: 'Owns the sales tech stack and process optimization. Values clean data, integration capabilities, and evidence-based coaching signals. Often burned by previous AI tools that promised insights but delivered noise.',
+            },
+          ];
+        }
+      }
+
+      if (product.keyQuestions.length === 0) {
+        draftedProduct.keyQuestions = isCommander
+          ? [
+              'How do you currently know which deals need your attention?',
+              'What percentage of pipeline surprises could you have seen coming?',
+              'How much time do your sales managers spend in status meetings vs coaching?',
+            ]
+          : [
+              'What does success look like for your revenue team this quarter?',
+              'How do you currently know when a deal is gaining or losing momentum?',
+              'What happens when your best seller takes time off or leaves?',
+            ];
+      }
+
+      if (product.keyObjectives.length === 0) {
+        draftedProduct.keyObjectives = isCommander
+          ? [
+              'Increase pipeline predictability and reduce forecast surprises',
+              'Identify intervention opportunities before deals slip',
+              'Focus coaching time on highest-impact activities',
+            ]
+          : [
+              'Increase deal velocity across the full pipeline',
+              'Scale best-seller behaviors to entire team',
+              'Reduce time to productivity for new reps',
+            ];
+      }
+
+      if (product.differentiators.length === 0) {
+        draftedProduct.differentiators = isCommander
+          ? [
+              {
+                id: `d-${Date.now()}-1`,
+                they: 'Dashboards showing lagging indicators and historical trends',
+                we: 'Real-time pattern detection and forward-looking momentum signals',
+              },
+              {
+                id: `d-${Date.now()}-2`,
+                they: 'Generic reports requiring manual interpretation',
+                we: 'Intelligent surfaces that tell you what needs attention and why',
+              },
+            ]
+          : [
+              {
+                id: `d-${Date.now()}-1`,
+                they: 'Record and analyze conversations after the call ends',
+                we: 'Provide real-time guidance while the buyer is still engaged',
+              },
+              {
+                id: `d-${Date.now()}-2`,
+                they: 'Create surveillance concerns with always-on recording',
+                we: 'Private seller guidance with no-monitor commitment',
+              },
+            ];
+      }
+
+      if (product.objections.length === 0) {
+        draftedProduct.objections = isCommander
+          ? [
+              {
+                id: `o-${Date.now()}-1`,
+                objection: 'We already have Clari / Salesforce dashboards',
+                counter: "Commander doesn't replace Clari—it makes it more actionable. Clari shows forecast roll-ups and deal scores. Commander shows which deals need intervention right now and what pattern is causing the stall.",
+              },
+            ]
+          : [
+              {
+                id: `o-${Date.now()}-1`,
+                objection: 'How is this different from Gong or Chorus?',
+                counter: 'Gong records and analyzes after the call. Hunter guides during, while the conversation is happening. Think of Gong as the film room; Hunter is the coach on the sideline during the game.',
+              },
+            ];
+      }
+
+      if (product.competitors.length === 0) {
+        draftedProduct.competitors = isCommander
+          ? [
+              {
+                id: `c-${Date.now()}-1`,
+                name: 'Clari',
+                profile: 'Revenue operations platform focused on forecasting accuracy, pipeline management, and deal inspection. Strong in forecast roll-ups and executive reporting.',
+              },
+            ]
+          : [
+              {
+                id: `c-${Date.now()}-1`,
+                name: 'Gong',
+                profile: 'Market leader in conversation intelligence and revenue intelligence platform. Strong in post-call analysis, trend identification, and manager dashboards.',
+              },
+            ];
+      }
+
+      if (product.buyerEnvironment.length === 0) {
+        draftedProduct.buyerEnvironment = isCommander
+          ? [
+              { id: `be-${Date.now()}-1`, signal: 'Leadership mentions being surprised by deals slipping at the last minute' },
+              { id: `be-${Date.now()}-2`, signal: 'Sales managers spending excessive time in pipeline review meetings' },
+            ]
+          : [
+              { id: `be-${Date.now()}-1`, signal: 'Mentions "AI fatigue" or concerns about adding another AI tool' },
+              { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
+            ];
+      }
+
+      return {
+        ...state,
+        products: state.products.map((p, i) => (i === productIndex ? draftedProduct : p)),
+      };
+    }
+    
+    case 'UPDATE_COMPLETED_SECTIONS': {
+      const product = state.products.find(p => p.id === action.productId);
+      if (!product) return state;
+
+      const completedSections = {
+        about: product.description.length > 20 && product.sources.length > 0,
+        personas: product.personas.length > 0 && product.personas.every(p => p.name && p.notes),
+        keySignals: product.keyQuestions.length > 0 && product.keyObjectives.length > 0 && 
+                    product.differentiators.length > 0 && product.objections.length > 0,
+        competitive: product.competitors.length > 0,
+        marketInfo: product.buyerEnvironment.length > 0 || product.companyProductEnvironment.length > 0 ||
+                   product.dealEnvironmentSignals.length > 0,
+      };
+
       return {
         ...state,
         products: state.products.map(p =>
-          p.id === action.productId
-            ? { ...p, draftGenerated: true }
-            : p
+          p.id === action.productId ? { ...p, completedSections } : p
         ),
       };
+    }
     
-    case 'RESOLVE_CONTRADICTION':
-      return {
-        ...state,
-        contradictions: state.contradictions.map(c =>
-          c.id === action.contradictionId
-            ? { ...c, resolved: true, resolution: action.resolution }
-            : c
-        ),
-      };
+    case 'RESOLVE_CONTRADICTION': {
+      const contradiction = state.contradictions.find(c => c.id === action.contradictionId);
+      if (!contradiction) return state;
+
+      let updatedState = { ...state };
+
+      // Apply the chosen option
+      if (contradiction.id === 'con1') {
+        // Deal size vs sales cycle mismatch
+        if (action.resolution === 'option1') {
+          // Update sales cycle to 90-180 days
+          updatedState.companyOverview = {
+            ...updatedState.companyOverview,
+            typicalSalesCycle: '90-180 days',
+          };
+        } else {
+          // Update deal size to $25K-$100K
+          updatedState.companyOverview = {
+            ...updatedState.companyOverview,
+            typicalDealSize: '$25K-$100K',
+          };
+        }
+      } else if (contradiction.id === 'con2') {
+        // Cross-product objection handling
+        if (action.resolution === 'option1') {
+          // Keep both—they're complementary
+          // No state change needed, just mark resolved
+        } else {
+          // Unify message
+          updatedState.products = updatedState.products.map(p => ({
+            ...p,
+            objections: p.objections.map(obj =>
+              obj.objection.toLowerCase().includes('tool')
+                ? {
+                    ...obj,
+                    counter: obj.counter.replace(
+                      /Hunter (complements|doesn't replace).*?\./,
+                      'Hunter is an intelligent layer that makes your existing tools more actionable.'
+                    ),
+                  }
+                : obj
+            ),
+          }));
+        }
+      } else if (contradiction.id === 'con3') {
+        // Framework vs stages
+        if (action.resolution === 'option1') {
+          // Add MEDDPICC checkpoints to stages
+          const meddpiccStages = state.dealStages.map(stage => ({
+            ...stage,
+            description: stage.description + (stage.description ? ' | ' : '') + 'MEDDPICC checkpoint',
+          }));
+          updatedState.dealStages = meddpiccStages;
+        } else {
+          // Restructure stages to align with MEDDPICC
+          updatedState.dealStages = [
+            { id: 'qualification', name: 'Qualification', description: 'MEDDPICC validation' },
+            { id: 'technical', name: 'Technical Validation', description: 'Metrics, Decision Criteria' },
+            { id: 'economic', name: 'Economic Validation', description: 'Economic Buyer engagement' },
+            { id: 'decision-process', name: 'Decision Process', description: 'Identify Pain, Champion confirmed' },
+            { id: 'paper-process', name: 'Paper Process', description: 'Legal, procurement, contracts' },
+            { id: 'closed-won', name: 'Closed Won', description: 'Deal signed' },
+          ];
+        }
+      }
+
+      // Mark contradiction as resolved
+      updatedState.contradictions = updatedState.contradictions.map(c =>
+        c.id === action.contradictionId
+          ? { ...c, resolved: true, resolution: action.resolution }
+          : c
+      );
+
+      return updatedState;
+    }
     
     case 'TOGGLE_VISIBILITY':
       return {
@@ -468,6 +744,17 @@ export default function TeachPage() {
         return true;
     }
   };
+
+  // Calculate go-live readiness
+  const allProductsComplete = state.products.every(
+    (p) =>
+      p.description.length > 20 &&
+      p.personas.length > 0 &&
+      p.keyQuestions.length > 0 &&
+      p.competitors.length > 0
+  );
+  const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;
+  const canGoLive = state.visibility.sensing && allProductsComplete && unresolvedContradictions === 0;
 
   const handleNext = () => {
     if (state.currentStep < totalSteps - 1) {
@@ -588,17 +875,26 @@ export default function TeachPage() {
                 </button>
                 
                 {state.currentStep === totalSteps - 1 ? (
-                  <button
-                    onClick={() => {
-                      dispatch({ type: 'GO_LIVE' });
-                      showToast('Hunter is now live! Redirecting to dashboard...');
-                      setTimeout(() => window.location.href = '/dashboard', 2000);
-                    }}
-                    disabled={!state.visibility.sensing}
-                    className="btn-primary py-3.5 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Complete & Go Live →
-                  </button>
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      onClick={() => {
+                        dispatch({ type: 'GO_LIVE' });
+                        showToast('Hunter is now live! Redirecting to dashboard...');
+                        setTimeout(() => window.location.href = '/dashboard', 2000);
+                      }}
+                      disabled={!canGoLive}
+                      className="btn-primary py-3.5 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Complete & Go Live →
+                    </button>
+                    {!canGoLive && (
+                      <div className="text-xs text-piloteer-signal text-right">
+                        {!state.visibility.sensing && 'Enable sensing'}
+                        {state.visibility.sensing && !allProductsComplete && 'Complete all products'}
+                        {state.visibility.sensing && allProductsComplete && unresolvedContradictions > 0 && `Resolve ${unresolvedContradictions} conflict${unresolvedContradictions > 1 ? 's' : ''}`}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <button
                     onClick={handleNext}

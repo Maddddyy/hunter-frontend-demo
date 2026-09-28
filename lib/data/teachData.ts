@@ -404,11 +404,11 @@ function createCommanderProduct(): ProductTeach {
     ],
     draftGenerated: false,
     completedSections: {
-      about: false,
-      personas: false,
-      keySignals: false,
-      competitive: false,
-      marketInfo: false,
+      about: true,
+      personas: true,
+      keySignals: true,
+      competitive: true,
+      marketInfo: true,
     },
   };
 }
@@ -417,11 +417,11 @@ function generateContradictions(): Contradiction[] {
   return [
     {
       id: 'con1',
-      type: 'persona-segment',
-      title: 'Buyer persona vs customer segment mismatch',
-      description: 'Hunter targets CROs and VPs (enterprise personas) but company overview indicates Mid-Market segment. Mid-market typically has Director-level revenue leaders.',
-      option1: 'Update customer segment to Enterprise to match CRO/VP personas',
-      option2: 'Update Hunter personas to include Director of Sales and VP Sales for mid-market fit',
+      type: 'deal-size',
+      title: 'Deal size vs typical sales cycle mismatch',
+      description: 'Company overview indicates typical deal size of $100K-$500K (mid-to-large deals) but sales cycle is set to 30-90 days. Deals in this range typically require 90-180 days for enterprise validation, security review, and multi-stakeholder alignment.',
+      option1: 'Update sales cycle to 90-180 days to match deal complexity',
+      option2: 'Update typical deal size to $25K-$100K to align with 30-90 day cycle',
       resolved: false,
     },
     {
