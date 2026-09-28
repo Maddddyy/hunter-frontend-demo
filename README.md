@@ -104,15 +104,17 @@ Pattern → Meaning → Evidence → Impact → Recommended Action
 |-------|---------|--------------|
 | `/` | Home / demo entry | Links to all main experiences |
 | `/teach` | Teach Hunter journey | 12-step progressive onboarding (products → personas → signals → company profile) |
-| `/console` | Console (all users) | Prep sensing, live sensing, follow-through |
+| `/console` | Console (standalone companion) | Prep sensing, live sensing, follow-through — floating ~400px panel |
 | `/dashboard` | Seller Performance | Book momentum, Needs You, Patterns (4 tabs), My Performance |
 | `/dashboard/deals` | Deal board | Hunter Momentum / CRM Stage views |
 | `/dashboard/manager` | Manager dashboard | Team book momentum, intervention queue, team patterns |
 | `/dashboard/cro` | CRO dashboard | Revenue momentum, org-level patterns, systemic actions |
+| `/settings` | Settings | Trust & Visibility, Model Updates, integrations |
 
 **Navigation:**
-- Console: Piloteer Logo | Search | Start Sensing ▾ | + | More
-- Dashboards: Performance | Deals | Team | Settings | Ask Hunter
+- **Console:** Standalone surface with menu bar chrome (Piloteer Logo | Search | Start Sensing ▾ | + | More). Floating 400px panel. Logo opens dashboards.
+- **Dashboards:** Performance | Deals | Team | Settings | Ask Hunter (drawer)
+- **Teach:** Own journey chrome with step/product rail
 
 ## Product Rules & Constraints
 
