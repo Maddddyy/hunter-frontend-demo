@@ -21,7 +21,7 @@ export default function SellerDashboard() {
   const [activePatternTab, setActivePatternTab] = useState<PatternTab>('seller');
   const [needsYouIndex, setNeedsYouIndex] = useState(0);
 
-  // Value-weighted book momentum (TechCorp-primary: $1.2M at +32 dominates the $2.2M book)
+  // Value-weighted average of deal momentums (so a naive mean of zero cannot contradict direction)
   const totalValue = mockDeals.reduce((sum, deal) => sum + deal.value, 0);
   const totalMomentum = Math.round(
     mockDeals.reduce((sum, deal) => sum + (deal.momentum * deal.value), 0) / totalValue
