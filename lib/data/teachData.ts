@@ -240,7 +240,20 @@ function createCommanderProduct(): ProductTeach {
   return {
     id: 'commander',
     name: 'Commander',
-    sources: [],
+    sources: [
+      {
+        id: 'src-cmd-1',
+        type: 'file',
+        name: 'Commander Executive Overview.pdf',
+        size: '1.9 MB',
+      },
+      {
+        id: 'src-cmd-2',
+        type: 'url',
+        name: 'Commander Platform',
+        url: 'https://piloteer.ai/commander',
+      },
+    ],
     description: 'Revenue team performance platform that gives sales leaders real-time visibility into pipeline health, team patterns, and coaching opportunities. Commander aggregates signals from Hunter and your CRM to surface what needs your attention and where to intervene for maximum impact.',
     personas: [
       {

@@ -144,7 +144,7 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
           return {
             ...updatedProduct,
             completedSections: {
-              about: updatedProduct.description.length > 20 && updatedProduct.sources.length > 0,
+              about: updatedProduct.description.trim().length > 20,
               personas: updatedProduct.personas.length > 0,
               keySignals: updatedProduct.keyQuestions.length > 0 && updatedProduct.keyObjectives.length > 0,
               competitive: updatedProduct.competitors.length > 0,
@@ -563,9 +563,15 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
             { id: `be-${Date.now()}-2`, signal: 'Previous investment in conversation intelligence with mixed adoption' },
           ];
 
+      // Product-specific drafted descriptions
+      const draftDescription: string = isCommander
+        ? 'Revenue team performance platform that gives sales leaders real-time visibility into pipeline health, team patterns, and coaching opportunities. Commander aggregates signals from Hunter and your CRM to surface what needs your attention and where to intervene for maximum impact. Built for leaders who need to know which deals are stalling, which reps need coaching, and where small changes will create the biggest revenue outcomes.'
+        : 'Real-time sales performance system that provides private guidance during live customer interactions. Hunter helps every seller perform like your best sellers by whispering the next best move while the outcome can still change. Built on behavioral science, not surveillance—helping reps navigate complex buyer conversations without creating compliance or trust concerns.';
+
       // Build the drafted product by replacing/merging content
       const draftedProduct: ProductTeach = {
         ...product,
+        description: draftDescription,
         personas: draftPersonas,
         keyQuestions: draftKeyQuestions,
         keyObjectives: draftKeyObjectives,
@@ -596,7 +602,7 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
       if (!product) return state;
 
       const completedSections = {
-        about: product.description.length > 20 && product.sources.length > 0,
+        about: product.description.trim().length > 20,
         personas: product.personas.length > 0 && product.personas.every(p => p.name && p.notes),
         keySignals: product.keyQuestions.length > 0 && product.keyObjectives.length > 0 && 
                     product.differentiators.length > 0 && product.objections.length > 0,
@@ -753,11 +759,6 @@ export default function TeachPage() {
   // Calculate go-live readiness
   const allProductsComplete = state.products.every(
     (p) =>
-      p.description.length > 20 &&
-      p.personas.length > 0 &&
-      p.keyQuestions.length > 0 &&
-      p.competitors.length > 0 &&
-      // Use completedSections for accurate completion tracking
       p.completedSections.about &&
       p.completedSections.personas &&
       p.completedSections.keySignals &&
