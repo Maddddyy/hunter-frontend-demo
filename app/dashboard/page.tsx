@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import PatternCard from '@/components/PatternCard';
 import {
@@ -36,8 +36,8 @@ export default function SellerDashboard() {
   const currentNeedsYou = needsYouItems[needsYouIndex];
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-8 py-12 space-y-16">
         {/* Your Book's Momentum */}
@@ -256,7 +256,6 @@ export default function SellerDashboard() {
           </div>
         </section>
       </div>
-      </div>
-    </AppShell>
+    </DashboardNav>
   );
 }

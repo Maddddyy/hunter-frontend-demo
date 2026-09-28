@@ -1,11 +1,11 @@
 'use client';
 
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 
 export default function SettingsPage() {
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
         <div className="max-w-4xl mx-auto px-8 py-12 space-y-12">
           <div>
             <div className="eyebrow mb-3">Configuration</div>
@@ -155,6 +155,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </DashboardNav>
   );
 }

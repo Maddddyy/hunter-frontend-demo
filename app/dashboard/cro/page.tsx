@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AppShell from '@/components/AppShell';
+import DashboardNav from '@/components/DashboardNav';
 import MomentumDisplay from '@/components/MomentumDisplay';
 import PatternCard from '@/components/PatternCard';
 import { mockDeals, marketPatterns } from '@/lib/data/mockData';
@@ -22,8 +22,8 @@ export default function CRODashboard() {
   const losingValue = losingDeals.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <AppShell>
-      <div className="flex-1 overflow-y-auto bg-piloteer-void">
+    <DashboardNav>
+      <div className="flex-1 bg-piloteer-void">
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between">
@@ -307,8 +307,7 @@ export default function CRODashboard() {
           </div>
         </section>
       </div>
-      </div>
-    </AppShell>
+    </DashboardNav>
   );
 }
 
