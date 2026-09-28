@@ -1,0 +1,832 @@
+<meta charset="utf-8">
+<title>Hunter Momentum</title>
+<meta name="description" content="How Hunter reads whether a deal is gaining or losing ground — the −100 to +100 momentum concept.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap">
+<style>
+  /* Committed dark palette — matches the Hunter product identity (single theme by design). */
+  :root{
+    --ground:#08080B; --surface:#101015; --surface-2:#15151C; --surface-3:#1D1D26;
+    --hair:#23232C; --hair-2:#32323E;
+    --ink:#F5F6F7; --ink-dim:#B7BABD; --ink-mute:#787C86;
+    --red:#FF5C5C; --red-soft:rgba(255,92,92,.13); --red-line:rgba(255,92,92,.34);
+    --amber:#E8A33D; --amber-soft:rgba(232,163,61,.13); --amber-line:rgba(232,163,61,.32);
+    --green:#5BC08D; --green-soft:rgba(91,192,141,.13); --green-line:rgba(91,192,141,.34);
+    --neutral:#B7BABD;
+    --focus:#7FB0FF;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+    --disp:"Montserrat",system-ui,sans-serif;
+    --shadow:0 24px 70px rgba(0,0,0,.55);
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(183,186,189,.22)}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:5px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  svg{display:block}
+
+  /* ---------- top bar ---------- */
+  .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+    padding:15px clamp(20px,5vw,60px);border-bottom:1px solid var(--hair);
+    background:rgba(8,8,11,.82);backdrop-filter:blur(16px)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .emblem{width:30px;height:30px;flex:none}
+  .wordmark{font-family:var(--disp);font-weight:700;letter-spacing:.14em;font-size:14px}
+  .sep{width:1px;height:20px;background:var(--hair-2)}
+  .top .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute)}
+  .sample{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);border:1px solid var(--hair);
+    border-radius:20px;padding:6px 12px}
+  .sample i{width:6px;height:6px;border-radius:50%;background:var(--neutral)}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(20px,5vw,60px)}
+  section{padding:64px 0;border-bottom:1px solid var(--hair)}
+  section:last-of-type{border-bottom:none}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 18px}
+  .num-eyebrow{display:inline-flex;align-items:center;gap:10px}
+  .num-eyebrow b{color:var(--ink-dim);font-weight:500}
+
+  /* ---------- hero ---------- */
+  .hero{padding-top:72px}
+  .hero h1{font-family:var(--disp);font-weight:700;letter-spacing:-.028em;line-height:1.06;
+    font-size:clamp(32px,5.4vw,60px);margin:0 0 26px;max-width:17ch;text-wrap:balance}
+  .hero h1 em{font-style:normal;color:var(--ink-dim)}
+  .lead{font-size:clamp(16px,1.5vw,18.5px);color:var(--ink-dim);max-width:62ch;margin:0 0 30px;line-height:1.6}
+  .lead b{color:var(--ink);font-weight:600}
+  .nots{display:flex;flex-wrap:wrap;gap:10px}
+  .not{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;
+    color:var(--ink-dim);border:1px solid var(--hair);background:var(--surface);border-radius:22px;padding:9px 15px}
+  .not svg{width:13px;height:13px;color:var(--ink-mute);flex:none}
+
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;line-height:1.12;
+    font-size:clamp(23px,2.6vw,33px);margin:0 0 14px;max-width:20ch;text-wrap:balance}
+  .sub{color:var(--ink-dim);max-width:60ch;margin:0 0 34px;font-size:15.5px}
+
+  /* ---------- the big scale ---------- */
+  .scalebox{background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:34px clamp(20px,4vw,44px) 30px}
+  .scale{position:relative;height:74px;border-radius:12px;overflow:hidden;display:flex;border:1px solid var(--hair)}
+  .zone{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
+  .zone .zl{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.01em}
+  .zone .zr{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--ink-mute)}
+  .z-cold{flex:30;background:rgba(255,92,92,.20)} .z-cold .zl{color:#ff8f8f}
+  .z-slip{flex:15;background:rgba(232,163,61,.16)} .z-slip .zl{color:var(--amber)}
+  .z-neu{flex:10;background:rgba(183,186,189,.11)} .z-neu .zl{color:var(--ink-dim)}
+  .z-gain{flex:20;background:rgba(91,192,141,.15)} .z-gain .zl{color:var(--green)}
+  .z-strong{flex:25;background:rgba(91,192,141,.28)} .z-strong .zl{color:#7ed3a6}
+  .zeroline{position:absolute;left:50%;top:-6px;bottom:-6px;width:2px;background:var(--ink);transform:translateX(-1px);z-index:3}
+  .zerocap{position:absolute;left:50%;top:-26px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;
+    letter-spacing:.08em;color:var(--ink);white-space:nowrap}
+  .ticks{display:flex;justify-content:space-between;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
+  .scale-legend{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
+  .sl{border-left:2px solid var(--hair-2);padding:2px 0 2px 14px}
+  .sl b{font-family:var(--mono);font-size:12px;color:var(--ink);display:block;margin-bottom:4px}
+  .sl span{font-size:13px;color:var(--ink-dim)}
+
+  /* ---------- reusable momentum bar ---------- */
+  .mbar{position:relative;height:12px;border-radius:7px;background:var(--surface-3);overflow:hidden}
+  .mbar .zc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--hair-2);z-index:2}
+  .mbar .fill{position:absolute;top:0;bottom:0;border-radius:7px;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .mbar .fill.pos{background:linear-gradient(90deg,rgba(91,192,141,.45),var(--green))}
+  .mbar .fill.neg{background:linear-gradient(90deg,var(--red),rgba(255,92,92,.45))}
+  .mbar .fill.zero{background:var(--neutral)}
+  .mbar .dot{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);
+    border:2px solid var(--ground);z-index:3}
+  .valnum{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .valnum.pos{color:var(--green)} .valnum.neg{color:var(--red)} .valnum.zero{color:var(--ink-dim)}
+
+  /* ---------- anatomy ---------- */
+  .anat{background:var(--surface);border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+  .anat-head{padding:26px clamp(20px,3.5vw,34px);border-bottom:1px solid var(--hair);
+    background:radial-gradient(120% 160% at 0% 0%,rgba(255,255,255,.03),transparent 55%)}
+  .anat-co{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .anat-co .nm{font-family:var(--disp);font-weight:700;font-size:15px}
+  .anat-co .dl{font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
+  .readline{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .interp{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;font-size:clamp(22px,2.4vw,30px);margin:0;color:var(--ink)}
+  .bignum{font-family:var(--mono);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums;color:var(--green)}
+  .trend{font-size:13.5px;color:var(--ink-dim)}
+  .trend b{color:var(--green);font-weight:600}
+  .anat-bar{margin-top:22px}
+  .anat-scaletick{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-mute);margin-top:8px}
+  .drivers{display:flex;flex-direction:column}
+  .driver{display:grid;grid-template-columns:20px 1fr auto;gap:16px;align-items:start;
+    padding:20px clamp(20px,3.5vw,34px);border-top:1px solid var(--hair)}
+  .driver:first-child{border-top:none}
+  .driver .dnum{font-family:var(--mono);font-size:11px;color:var(--ink-mute);padding-top:3px}
+  .driver .dk{font-family:var(--disp);font-weight:600;font-size:14.5px;margin-bottom:5px}
+  .driver .dd{font-size:13.5px;color:var(--ink-dim);max-width:64ch}
+  .driver .dv{font-family:var(--mono);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:2px}
+  .driver .dv.pos{color:var(--green)} .driver .dv.neg{color:var(--red)}
+  .anat-foot{padding:18px clamp(20px,3.5vw,34px);border-top:1px solid var(--hair-2);
+    background:var(--surface-2);display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--ink-dim)}
+  .anat-foot .sum{font-family:var(--mono);color:var(--ink);font-weight:600}
+  .anat-foot svg{width:16px;height:16px;color:var(--green);flex:none}
+
+  /* ---------- signals ---------- */
+  .signals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .sig{background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;display:flex;flex-direction:column}
+  .sig .sig-ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+    background:var(--surface-3);border:1px solid var(--hair-2);color:var(--ink);margin-bottom:16px}
+  .sig .sig-ic svg{width:20px;height:20px}
+  .sig h3{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:-.01em;margin:0 0 7px}
+  .sig .def{color:var(--ink-dim);font-size:13.5px;margin:0 0 16px}
+  .sig .watch{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 10px}
+  .sig ul{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:9px}
+  .sig li{position:relative;padding-left:18px;font-size:13.5px;color:var(--ink)}
+  .sig li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--ink-mute)}
+  .sig .crm{margin-top:auto;padding-top:15px;border-top:1px solid var(--hair);font-size:12.5px;color:var(--ink-dim);line-height:1.5}
+  .sig .crm b{color:var(--red);font-weight:600;font-family:var(--mono);font-size:10px;letter-spacing:.09em;
+    text-transform:uppercase;display:block;margin-bottom:5px}
+
+  /* ---------- deal list ---------- */
+  .deals{background:var(--surface);border:1px solid var(--hair);border-radius:18px;overflow:hidden}
+  .deals-h,.deal{display:grid;grid-template-columns:1.5fr 2.1fr 76px 130px;gap:18px;align-items:center;
+    padding:15px clamp(18px,2.6vw,26px)}
+  .deals-h{border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--ink-mute)}
+  .deals-h .r{text-align:right}
+  .deal{border-top:1px solid var(--hair);transition:.15s}
+  .deal:first-of-type{border-top:none}
+  .deal:hover{background:var(--surface-2)}
+  .deal .co{font-family:var(--disp);font-weight:600;font-size:14px}
+  .deal .why{font-size:12px;color:var(--ink-mute);margin-top:3px}
+  .deal .barcell{display:flex;align-items:center;gap:13px}
+  .deal .barcell .mbar{flex:1}
+  .deal .barcell .valnum{width:42px;text-align:right;font-size:13px}
+  .deal .slope{justify-self:center}
+  .state{justify-self:end;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:6px 11px;border-radius:20px;border:1px solid var(--hair-2);color:var(--ink-dim);white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px}
+  .state i{width:6px;height:6px;border-radius:50%;flex:none}
+  .state.progress{color:var(--green);border-color:var(--green-line);background:var(--green-soft)} .state.progress i{background:var(--green)}
+  .state.stall{color:var(--amber);border-color:var(--amber-line);background:var(--amber-soft)} .state.stall i{background:var(--amber)}
+  .state.cold{color:var(--red);border-color:var(--red-line);background:var(--red-soft)} .state.cold i{background:var(--red)}
+
+  /* ---------- rep net ---------- */
+  .repcard{display:grid;grid-template-columns:1.1fr 1fr;gap:0;background:var(--surface);border:1px solid var(--hair);
+    border-radius:20px;overflow:hidden}
+  .rep-left{padding:30px clamp(22px,3.5vw,36px);border-right:1px solid var(--hair)}
+  .rep-who{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .rep-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-weight:600;
+    font-size:13px;color:#fff;background:linear-gradient(140deg,#3a3a48,#20202a);border:1px solid rgba(255,255,255,.14)}
+  .rep-who .nm{font-family:var(--disp);font-weight:700;font-size:15px}
+  .rep-who .role{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);margin-top:2px}
+  .rep-read{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .rep-read .interp{font-size:clamp(19px,2vw,24px)}
+  .rep-read .bignum{font-size:20px}
+  .rep-sub{font-size:13px;color:var(--ink-dim);margin:0 0 22px}
+  .rep-right{padding:30px clamp(22px,3.5vw,36px);display:flex;flex-direction:column;justify-content:center}
+  .rep-right .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 4px}
+  .rep-right .capsub{font-size:12.5px;color:var(--ink-dim);margin:0 0 16px}
+  .trendsvg{width:100%;height:auto}
+  .guard{margin-top:22px;display:flex;gap:11px;align-items:flex-start;font-size:13px;color:var(--ink-dim);
+    background:var(--surface-2);border:1px solid var(--hair);border-radius:12px;padding:14px 16px}
+  .guard svg{width:16px;height:16px;color:var(--ink-dim);flex:none;margin-top:2px}
+  .guard b{color:var(--ink);font-weight:600}
+
+  /* ---------- coda ---------- */
+  .coda{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .no{background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:24px 22px}
+  .no .x{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;border:1px solid var(--red-line);
+    background:var(--red-soft);color:var(--red);margin-bottom:15px}
+  .no .x svg{width:15px;height:15px}
+  .no h4{font-family:var(--disp);font-weight:700;font-size:15px;margin:0 0 8px}
+  .no p{font-size:13.5px;color:var(--ink-dim);margin:0}
+
+  footer{padding:34px 0 60px;color:var(--ink-mute);font-family:var(--mono);font-size:11px;letter-spacing:.03em;text-align:center}
+
+  @media (max-width:860px){
+    .signals,.coda{grid-template-columns:1fr}
+    .scale-legend{grid-template-columns:1fr}
+    .repcard{grid-template-columns:1fr}
+    .rep-left{border-right:none;border-bottom:1px solid var(--hair)}
+    .deals-h,.deal{grid-template-columns:1.3fr 1.8fr 110px}
+    .deal .slope{display:none} .deals-h .slopeh{display:none}
+    .zone .zr{display:none}
+  }
+
+  /* ---------- dimension tokens ---------- */
+  :root{ --v:#7FB0FF; --v-soft:rgba(127,176,255,.13); --v-line:rgba(127,176,255,.34);
+         --c:#C9A0FF; --c-soft:rgba(201,160,255,.13); --c-line:rgba(201,160,255,.34);
+         --p:#5BC08D; --p-soft:rgba(91,192,141,.13); --p-line:rgba(91,192,141,.34); }
+  .t-V{color:var(--v)} .t-C{color:var(--c)} .t-P{color:var(--p)}
+  .bg-V{background:var(--v)} .bg-C{background:var(--c)} .bg-P{background:var(--p)}
+
+  h3.sec{font-family:var(--disp);font-weight:700;letter-spacing:-.015em;font-size:19px;margin:44px 0 6px}
+  p.secsub{color:var(--ink-dim);font-size:14px;margin:0 0 20px;max-width:64ch}
+
+  /* ---------- distribution ---------- */
+  .distro{background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:30px clamp(20px,4vw,40px)}
+  .distro-bar{display:flex;height:52px;border-radius:11px;overflow:hidden;border:1px solid var(--hair);margin-bottom:10px}
+  .distro-bar div{display:grid;place-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.07em;
+    text-transform:uppercase;color:#0B0B0F;font-weight:600}
+  .distro-key{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-mute);margin-bottom:26px}
+  .dcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .dcard{border:1px solid var(--hair);border-radius:15px;padding:20px;background:var(--surface-2)}
+  .dcard.V{border-color:var(--v-line);background:linear-gradient(180deg,var(--v-soft),transparent 70%)}
+  .dcard.C{border-color:var(--c-line);background:linear-gradient(180deg,var(--c-soft),transparent 70%)}
+  .dcard.P{border-color:var(--p-line);background:linear-gradient(180deg,var(--p-soft),transparent 70%)}
+  .dcard .dh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+  .dcard .dn{font-family:var(--disp);font-weight:700;font-size:16px}
+  .dcard .dc{font-family:var(--mono);font-weight:600;font-size:26px;font-variant-numeric:tabular-nums}
+  .dcard .rule{font-size:13px;color:var(--ink-dim);margin:0 0 14px;line-height:1.5}
+  .dcard .rule b{color:var(--ink);font-weight:600}
+  .sb{display:flex;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);letter-spacing:.04em}
+  .sb span{border:1px solid var(--hair-2);border-radius:20px;padding:4px 9px}
+  .sb span b{color:var(--ink);font-weight:600}
+
+  /* ---------- behaviour matrix ---------- */
+  .mx{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .mxcol{background:var(--surface);border:1px solid var(--hair);border-radius:18px;overflow:hidden}
+  .mxh{padding:14px 20px;border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:9.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);display:flex;justify-content:space-between}
+  .mxr{display:grid;grid-template-columns:1fr 104px;gap:12px;align-items:center;padding:11px 20px;border-top:1px solid var(--hair);transition:.15s}
+  .mxr:first-of-type{border-top:none} .mxr:hover{background:var(--surface-2)}
+  .mxr .bn{font-size:13.5px;color:var(--ink)}
+  .mxr .bn i{font-family:var(--mono);font-style:normal;color:var(--ink-mute);font-size:11px;margin-right:7px}
+  .seg{display:flex;gap:2px}
+  .seg i{height:15px;flex:1;border-radius:3px;display:block}
+  .seg i.e{background:var(--surface-3)}
+
+  /* ---------- dossier ---------- */
+  .dossier{background:var(--surface);border:1px solid var(--hair);border-radius:20px;overflow:hidden;margin-bottom:18px}
+  .dos-h{padding:24px clamp(20px,3.5vw,32px);border-bottom:1px solid var(--hair);display:grid;
+    grid-template-columns:1fr auto;gap:20px;align-items:center}
+  .dossier.V .dos-h{background:linear-gradient(110deg,var(--v-soft),transparent 60%)}
+  .dossier.C .dos-h{background:linear-gradient(110deg,var(--c-soft),transparent 60%)}
+  .dossier.P .dos-h{background:linear-gradient(110deg,var(--p-soft),transparent 60%)}
+  .dos-h h3{font-family:var(--disp);font-weight:700;font-size:21px;margin:0 0 7px;letter-spacing:-.015em}
+  .dos-h .q{font-size:14px;color:var(--ink-dim);margin:0;max-width:60ch}
+  .dos-n{text-align:right;font-family:var(--mono)}
+  .dos-n b{display:block;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+  .dos-n span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)}
+  .dos-body{display:grid;grid-template-columns:1fr 1fr}
+  .dos-side{padding:22px clamp(20px,3.5vw,32px)}
+  .dos-side+.dos-side{border-left:1px solid var(--hair)}
+  .dos-side>.cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-mute);margin:0 0 14px;display:flex;justify-content:space-between}
+  .grp{margin-bottom:15px}
+  .grp>.gh{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);letter-spacing:.04em;margin-bottom:6px}
+  .grp ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .grp li{font-size:12.5px;color:var(--ink);border:1px solid var(--hair-2);background:var(--surface-2);
+    border-radius:7px;padding:5px 9px;display:inline-flex;align-items:center;gap:6px}
+  .grp li u{text-decoration:none;font-family:var(--mono);font-size:11px;line-height:1}
+  .grp li u.up{color:var(--green)} .grp li u.dn{color:var(--red)} .grp li u.bi{color:var(--amber)}
+  .dos-foot{padding:16px clamp(20px,3.5vw,32px);border-top:1px solid var(--hair-2);background:var(--surface-2);
+    font-size:13px;color:var(--ink-dim)}
+  .dos-foot b{color:var(--ink);font-weight:600}
+
+  /* ---------- signal table ---------- */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+  .filters .fl{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-mute);margin-right:4px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--ink-dim);background:var(--surface);
+    border:1px solid var(--hair-2);border-radius:20px;padding:6px 13px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--ink-mute);color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--surface-3);color:var(--ink);border-color:var(--ink-mute)}
+  .chip.V[aria-pressed="true"]{color:var(--v);border-color:var(--v-line);background:var(--v-soft)}
+  .chip.C[aria-pressed="true"]{color:var(--c);border-color:var(--c-line);background:var(--c-soft)}
+  .chip.P[aria-pressed="true"]{color:var(--p);border-color:var(--p-line);background:var(--p-soft)}
+  .fcount{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
+  .tbl{background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+  .th,.tr{display:grid;grid-template-columns:22px 1.15fr 1.5fr 1.5fr 0.85fr;gap:16px;
+    padding:12px clamp(16px,2.4vw,24px);align-items:start}
+  .th{border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--ink-mute);position:sticky;top:61px;background:var(--surface-2);z-index:5}
+  .tr{border-top:1px solid var(--hair);font-size:13px;transition:.12s}
+  .tr:first-of-type{border-top:none} .tr:hover{background:var(--surface-2)}
+  .tr .pol{font-family:var(--mono);font-size:13px;line-height:1.5;text-align:center}
+  .tr .pol.up{color:var(--green)} .tr .pol.dn{color:var(--red)} .tr .pol.bi{color:var(--amber)}
+  .tr .nm{font-weight:600;color:var(--ink)}
+  .tr .src{font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);margin-top:3px}
+  .tr .dfn{color:var(--ink-dim)}
+  .tr .cue{color:var(--ink-dim);font-style:italic}
+  .tr .rt{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;
+    border-radius:20px;padding:4px 9px;white-space:nowrap;border:1px solid}
+  .pill.V{color:var(--v);border-color:var(--v-line);background:var(--v-soft)}
+  .pill.C{color:var(--c);border-color:var(--c-line);background:var(--c-soft)}
+  .pill.P{color:var(--p);border-color:var(--p-line);background:var(--p-soft)}
+  .sidetag{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-mute)}
+  .empty{padding:40px;text-align:center;color:var(--ink-mute);font-family:var(--mono);font-size:12px}
+
+  .callout{margin-top:26px;display:flex;gap:13px;align-items:flex-start;background:var(--surface-2);
+    border:1px solid var(--hair-2);border-radius:14px;padding:18px 20px;font-size:13.5px;color:var(--ink-dim);line-height:1.6}
+  .callout svg{width:17px;height:17px;color:var(--amber);flex:none;margin-top:2px}
+  .callout b{color:var(--ink);font-weight:600}
+
+  .sig .cnt{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    border-radius:20px;padding:4px 10px;border:1px solid;align-self:flex-start;margin-bottom:12px}
+
+  @media (max-width:980px){
+    .dcards{grid-template-columns:1fr}
+    .mx{grid-template-columns:1fr}
+    .dos-body{grid-template-columns:1fr}
+    .dos-side+.dos-side{border-left:none;border-top:1px solid var(--hair)}
+    .th{display:none}
+    .tr{grid-template-columns:22px 1fr;gap:10px;row-gap:6px;padding:16px clamp(16px,2.4vw,24px)}
+    .tr .dfn,.tr .cue{grid-column:2}
+    .tr .rt{grid-column:2;align-items:flex-start;flex-direction:row;flex-wrap:wrap}
+  }
+</style>
+
+<header class="top">
+  <div class="brand">
+    <svg class="emblem" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="30" rx="9" fill="#101015" stroke="#32323E"/>
+      <path d="M8 21 L13 16 L18 18 L24 10" stroke="#5BC08D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="24" cy="10" r="2.4" fill="#5BC08D"/>
+    </svg>
+    <span class="wordmark">HUNTER</span>
+  </div>
+  <div class="sep"></div>
+  <span class="eyebrow">Momentum · design concept</span>
+  <span class="sample"><i></i> Illustrative data</span>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">The new core intelligence</p>
+      <h1>Is this deal moving toward <em>yes</em> — or slipping away?</h1>
+      <p class="lead">Momentum is Hunter's live read on forward motion, built from <b>deal velocity</b> and
+        <b>communication signals</b> your CRM never captures. It runs from <b>−100 to +100</b> — and it is never
+        just a number. Every reading arrives with its <b>direction</b> and its <b>reasons</b>, so you always know
+        which way a deal is going and why.</p>
+      <div class="nots">
+        <span class="not"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg> Not a rep ranking</span>
+        <span class="not"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg> Not your CRM stage</span>
+        <span class="not"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg> Not an opaque score</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE SCALE -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">01 · The scale</p>
+      <h2>A number you read as a position, not a grade.</h2>
+      <p class="sub">The same axis appears everywhere in Hunter. Zero means the deal is going nowhere. The further
+        right, the closer to a decision. The further left, the closer to dead. Plus and minus mean
+        <em>gaining vs losing ground</em> — never good vs bad seller.</p>
+      <div class="scalebox">
+        <div style="position:relative;padding-top:26px">
+          <div class="zerocap">0 · NEUTRAL</div>
+          <div class="scale">
+            <div class="zone z-cold"><span class="zl">Cold</span><span class="zr">−100 to −40</span></div>
+            <div class="zone z-slip"><span class="zl">Slipping</span><span class="zr">−40 to −10</span></div>
+            <div class="zone z-neu"><span class="zl">Neutral</span><span class="zr">−10 to +10</span></div>
+            <div class="zone z-gain"><span class="zl">Gaining</span><span class="zr">+10 to +50</span></div>
+            <div class="zone z-strong"><span class="zl">Strong</span><span class="zr">+50 to +100</span></div>
+            <div class="zeroline"></div>
+          </div>
+        </div>
+        <div class="ticks"><span>−100</span><span>−50</span><span>0</span><span>+50</span><span>+100</span></div>
+        <div class="scale-legend">
+          <div class="sl"><b>−100</b><span>Dead. No reply in weeks, champion gone, no path forward.</span></div>
+          <div class="sl"><b>0</b><span>Going nowhere. Not lost, but not advancing either.</span></div>
+          <div class="sl"><b>+100</b><span>Ready to close. Verbal commit, active multi-threading, next step booked.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANATOMY -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">02 · Anatomy of a reading</p>
+      <h2>The number always arrives wrapped in meaning.</h2>
+      <p class="sub">Interpretation first. Then which way it's moving. Then exactly what moved it. The figure itself
+        is the last thing you read — and it's fully broken down, so nothing is hidden.</p>
+      <div class="anat">
+        <div class="anat-head">
+          <div class="anat-co">
+            <span class="nm">Meridian Health</span><span class="dl">· Platform renewal · $420K · Q4</span>
+          </div>
+          <div class="readline">
+            <p class="interp">Gaining — and accelerating.</p>
+            <span class="bignum">+42</span>
+          </div>
+          <p class="trend">Up <b>+11 since Tuesday's call.</b> Third straight reading in positive territory.</p>
+          <div class="anat-bar" id="anatBar"></div>
+          <div class="anat-scaletick"><span>−100</span><span>0</span><span>+100</span></div>
+        </div>
+        <div class="drivers">
+          <div class="driver">
+            <span class="dnum">↑</span>
+            <div><div class="dk">Velocity</div><div class="dd">Buyer replied in 3 hours — twice as fast as their own norm. A next step is booked for Thursday.</div></div>
+            <span class="dv pos">+18</span>
+          </div>
+          <div class="driver">
+            <span class="dnum">↑</span>
+            <div><div class="dk">Communication</div><div class="dd">Two new stakeholders joined the thread. Language shifted from "if we go ahead" to "when we roll out."</div></div>
+            <span class="dv pos">+20</span>
+          </div>
+          <div class="driver">
+            <span class="dnum">↑</span>
+            <div><div class="dk">Progression</div><div class="dd">Security review cleared. One open risk remains — the procurement timeline — which keeps this short of Strong.</div></div>
+            <span class="dv pos">+4</span>
+          </div>
+        </div>
+        <div class="anat-foot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          <span><span class="sum">+18 &nbsp;+20 &nbsp;+4 &nbsp;=&nbsp; +42.</span> &nbsp;That's the whole number — no hidden weighting. You can always see what moved it.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNALS -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">03 · What feeds momentum</p>
+      <h2>Three signals — none of them from the CRM.</h2>
+      <p class="sub">Momentum is built only from things a pipeline report can't tell you. Each signal is scored against
+        a deal's <em>own</em> history, so a fast SMB deal and a slow enterprise cycle are judged fairly.</p>
+      <div class="signals">
+        <div class="sig">
+          <div class="sig-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+          <span class="cnt pill V">20 signals</span><h3>Velocity</h3>
+          <p class="def">How fast the deal is moving, measured against its own pace.</p>
+          <p class="watch">Hunter watches</p>
+          <ul>
+            <li>Response times vs the deal's baseline</li>
+            <li>Gaps between conversations widening or tightening</li>
+            <li>Whether a next step is actually on the calendar</li>
+          </ul>
+          <p class="crm"><b>The CRM can't see</b> The stage looks the same whether the buyer replied today or went silent for nine days.</p>
+        </div>
+        <div class="sig">
+          <div class="sig-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <span class="cnt pill C">55 signals</span><h3>Communication</h3>
+          <p class="def">What's actually being said — and by how many people.</p>
+          <p class="watch">Hunter watches</p>
+          <ul>
+            <li>Sentiment trend across recent messages</li>
+            <li>Stakeholders joining or dropping off the thread</li>
+            <li>Commitment language vs hedging ("circle back")</li>
+          </ul>
+          <p class="crm"><b>The CRM can't see</b> A single-threaded deal and a six-stakeholder deal look identical in the pipeline.</p>
+        </div>
+        <div class="sig">
+          <div class="sig-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <span class="cnt pill P">25 signals</span><h3>Progression</h3>
+          <p class="def">Whether each interaction actually advanced the deal.</p>
+          <p class="watch">Hunter watches</p>
+          <ul>
+            <li>Did the last conversation produce a real step forward</li>
+            <li>A decision, a document, a new stakeholder — or a repeat</li>
+            <li>Are open risks closing, or piling up</li>
+          </ul>
+          <p class="crm"><b>The CRM can't see</b> Stage moves when a rep drags a card. Progression moves when the buyer actually does something.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVIDENCE BASE -->
+  <section id="evidence">
+    <div class="wrap">
+      <p class="eyebrow">04 · The evidence base</p>
+      <h2>One hundred behaviours, folded into three.</h2>
+      <p class="sub">The Hunter's 10 describe what is observable <em>inside</em> a conversation — 50 seller behaviours
+        and 50 buyer behaviours, each with a definition, an observable cue, a modality and a research anchor.
+        Momentum is the deal-level verdict those observations roll up to. Every one of the 100 sub-dimensions is
+        scored on its own, then assigned to exactly one momentum dimension — seller and buyer measured separately,
+        never averaged into each other.</p>
+
+      <div class="distro">
+        <div class="distro-bar">
+          <div class="bg-V" style="flex:20">Velocity · 20</div>
+          <div class="bg-C" style="flex:55">Communication · 55</div>
+          <div class="bg-P" style="flex:25">Progression · 25</div>
+        </div>
+        <div class="distro-key"><span>0</span><span>100 SUB-DIMENSIONS</span></div>
+        <div class="dcards">
+          <div class="dcard V">
+            <div class="dh"><span class="dn t-V">Velocity</span><span class="dc t-V">20</span></div>
+            <p class="rule">Assigned when the primary observable is <b>timing, tempo, latency, rhythm or a change
+              in energy</b> — how fast the exchange moves, not what it means.</p>
+            <div class="sb"><span>Seller <b>11</b></span><span>Buyer <b>9</b></span></div>
+          </div>
+          <div class="dcard C">
+            <div class="dh"><span class="dn t-C">Communication</span><span class="dc t-C">55</span></div>
+            <p class="rule">Assigned when the primary observable is <b>meaning, sentiment, trust or depth of
+              disclosure</b> — what is actually being said, and how safely.</p>
+            <div class="sb"><span>Seller <b>24</b></span><span>Buyer <b>31</b></span></div>
+          </div>
+          <div class="dcard P">
+            <div class="dh"><span class="dn t-P">Progression</span><span class="dc t-P">25</span></div>
+            <p class="rule">Assigned when the primary observable is a <b>state change in the deal</b> — a named
+              decision, person or date, or a risk visibly opening or closing.</p>
+            <div class="sb"><span>Seller <b>15</b></span><span>Buyer <b>10</b></span></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="sec">How each of the ten splits</h3>
+      <p class="secsub">Five sub-dimensions per behaviour. The bar shows where those five land. No behaviour feeds
+        all three evenly — which is the point: each one has a natural home.</p>
+      <div class="mx">
+        <div class="mxcol">
+          <div class="mxh"><span>Seller behaviours</span><span>V · C · P</span></div>
+          <div id="mxSeller"></div>
+        </div>
+        <div class="mxcol">
+          <div class="mxh"><span>Buyer behaviours</span><span>V · C · P</span></div>
+          <div id="mxBuyer"></div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <span><b>The distribution is uneven on purpose — and it has a consequence.</b> Communication carries 55 of
+          the 100 signals, Velocity only 20. If all three dimensions contribute equally to the ±100 reading, each
+          Velocity signal must weigh roughly 2.75× each Communication signal. That weighting has to be set
+          deliberately, or the number will simply track sentiment and call it momentum.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOSSIERS -->
+  <section id="inside">
+    <div class="wrap">
+      <p class="eyebrow">05 · Inside each dimension</p>
+      <h2>Exactly what each momentum dimension contains.</h2>
+      <p class="sub">Every sub-dimension that feeds each reading, grouped by the behaviour it came from and split
+        by side. <span class="t-P">↑</span> raises momentum when present, <span style="color:var(--red)">↓</span>
+        lowers it when present, <span style="color:var(--amber)">↕</span> is bipolar — it has a healthy band, and
+        both too little and too much read as a problem.</p>
+      <div id="dossiers"></div>
+
+      <h3 class="sec">The full signal register</h3>
+      <p class="secsub">All 100 sub-dimensions, with the observable cue Hunter listens for and the momentum
+        dimension it feeds. Filter by dimension or by side.</p>
+      <div class="filters">
+        <span class="fl">Dimension</span>
+        <button class="chip" data-f="dim" data-v="all" aria-pressed="true">All</button>
+        <button class="chip V" data-f="dim" data-v="V" aria-pressed="false">Velocity</button>
+        <button class="chip C" data-f="dim" data-v="C" aria-pressed="false">Communication</button>
+        <button class="chip P" data-f="dim" data-v="P" aria-pressed="false">Progression</button>
+        <span class="fl" style="margin-left:14px">Side</span>
+        <button class="chip" data-f="side" data-v="all" aria-pressed="true">Both</button>
+        <button class="chip" data-f="side" data-v="s" aria-pressed="false">Seller</button>
+        <button class="chip" data-f="side" data-v="b" aria-pressed="false">Buyer</button>
+        <span class="fcount" id="fcount">100 signals</span>
+      </div>
+      <div class="tbl">
+        <div class="th"><span></span><span>Sub-dimension</span><span>Definition</span><span>Observable cue</span><span style="text-align:right">Feeds</span></div>
+        <div id="tblRows"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEAL LIST -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">06 · Every deal, at a glance</p>
+      <h2>Progressing, stalling, or cold — on one axis.</h2>
+      <p class="sub">The same −100/+100 bar per deal, with the recent slope beside it so you see the direction, not
+        just the level. Deals that need attention surface themselves.</p>
+      <div class="deals">
+        <div class="deals-h">
+          <span>Deal</span><span>Momentum</span><span class="slopeh" style="text-align:center">Last 5</span><span class="r">State</span>
+        </div>
+        <div id="dealRows"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REP NET -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">07 · The seller's net momentum</p>
+      <h2>The health of a book — never a leaderboard.</h2>
+      <p class="sub">Sum the momentum across a seller's active deals and you get one honest read on their book's
+        forward motion — shown as <em>their own</em> trend over time, compared to no one.</p>
+      <div class="repcard">
+        <div class="rep-left">
+          <div class="rep-who">
+            <div class="rep-av">PA</div>
+            <div><div class="nm">Priya Anand</div><div class="role">Seller · 11 active deals</div></div>
+          </div>
+          <div class="rep-read"><p class="interp">Net gaining</p><span class="bignum">+19</span></div>
+          <p class="rep-sub">Up from +6 two weeks ago. Six deals gaining, three flat, two need attention.</p>
+          <div class="anat-bar" id="repBar"></div>
+          <div class="anat-scaletick"><span>−100</span><span>0</span><span>+100</span></div>
+        </div>
+        <div class="rep-right">
+          <p class="cap">Net momentum · last 8 weeks</p>
+          <p class="capsub">Priya's book vs. its own past.</p>
+          <svg class="trendsvg" id="repTrend" viewBox="0 0 320 96" preserveAspectRatio="none" aria-label="Priya's net momentum rising from +6 to +19 over eight weeks"></svg>
+          <div class="guard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span><b>Hunter never ranks sellers against each other.</b> Net momentum reflects the deals in a territory — not a person's worth.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODA -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">08 · Deliberately not built</p>
+      <h2>What Momentum refuses to be.</h2>
+      <div class="coda">
+        <div class="no">
+          <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+          <h4>No stack ranking</h4>
+          <p>Ranking sellers against each other is an HR risk and punishes territory, not skill. Momentum measures deals, and rolls up to a seller's own trend.</p>
+        </div>
+        <div class="no">
+          <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+          <h4>No CRM-stage echo</h4>
+          <p>Stage is static and manually set. Momentum is dynamic and interaction-driven. The two live side by side — never merged into one confusing number.</p>
+        </div>
+        <div class="no">
+          <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+          <h4>No black box</h4>
+          <p>Every reading breaks down into its signals and their reasons. If Hunter can't explain a number in plain language, it doesn't show it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>HUNTER MOMENTUM · DESIGN CONCEPT · ILLUSTRATIVE DATA · NOT FINAL COPY</footer>
+</main>
+
+<script>
+  // ---- momentum bar renderer ----
+  function pct(v){ return Math.max(0,Math.min(100,(v+100)/2)); }
+  function cls(v){ return v>10?'pos':v<-10?'neg':'zero'; }
+  function barHTML(v){
+    var p=pct(v), z=50, c=cls(v);
+    var left,width;
+    if(v>=0){ left=z; width=p-z; } else { left=p; width=z-p; }
+    var dotColor = c==='pos'?'var(--green)':c==='neg'?'var(--red)':'var(--neutral)';
+    return '<div class="mbar">'
+      + '<div class="zc"></div>'
+      + '<div class="fill '+c+'" style="left:'+left+'%;width:'+width+'%"></div>'
+      + '<div class="dot" style="left:'+p+'%;background:'+dotColor+'"></div>'
+      + '</div>';
+  }
+  function signed(v){ return (v>0?'+':'')+v; }
+
+  // anatomy + rep bars
+  document.getElementById('anatBar').innerHTML = barHTML(42);
+  document.getElementById('repBar').innerHTML = barHTML(19);
+
+  // ---- slope sparkline ----
+  function slope(vals, tone){
+    var w=68,h=26,pad=4;
+    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals), rng=(mx-mn)||1;
+    var stroke = tone==='progress'?'#5BC08D':tone==='cold'?'#FF5C5C':'#E8A33D';
+    var pts=vals.map(function(v,i){
+      var x=pad+i*(w-2*pad)/(vals.length-1);
+      var y=pad+(h-2*pad)*(1-(v-mn)/rng);
+      return x.toFixed(1)+','+y.toFixed(1);
+    });
+    var last=pts[pts.length-1].split(',');
+    return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'
+      + '<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+stroke+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.6" fill="'+stroke+'"/></svg>';
+  }
+
+  // ---- deals ----
+  var deals=[
+    {co:'Northwind Foods', why:'Verbal commit; contract in legal.', v:71, hist:[40,52,58,66,71], state:'progress', label:'Progressing'},
+    {co:'Meridian Health', why:'Two new stakeholders; security cleared.', v:42, hist:[18,24,31,31,42], state:'progress', label:'Progressing'},
+    {co:'Brightline Logistics', why:'Replies slowing; no next step booked.', v:8, hist:[16,13,11,9,8], state:'stall', label:'Stalling'},
+    {co:'Atlas Manufacturing', why:'Awaiting their internal review.', v:-4, hist:[7,3,1,-2,-4], state:'stall', label:'Stalling'},
+    {co:'Corsair Group', why:'9 days silent; back to single-threaded.', v:-27, hist:[10,2,-8,-19,-27], state:'stall', label:'Needs attention'},
+    {co:'Vantage Retail', why:'No reply in 3 weeks; champion left the company.', v:-61, hist:[-20,-34,-45,-54,-61], state:'cold', label:'Cold'}
+  ];
+  document.getElementById('dealRows').innerHTML = deals.map(function(d){
+    return '<div class="deal">'
+      + '<div><div class="co">'+d.co+'</div><div class="why">'+d.why+'</div></div>'
+      + '<div class="barcell">'+barHTML(d.v)+'<span class="valnum '+cls(d.v)+'">'+signed(d.v)+'</span></div>'
+      + '<div class="slope">'+slope(d.hist,d.state)+'</div>'
+      + '<span class="state '+d.state+'"><i></i>'+d.label+'</span>'
+      + '</div>';
+  }).join('');
+
+  // ---- rep 8-week trend ----
+  (function(){
+    var vals=[-3,1,6,4,9,12,15,19];
+    var w=320,h=96,pad=10;
+    var mn=Math.min.apply(null,vals)-4, mx=Math.max.apply(null,vals)+4, rng=(mx-mn)||1;
+    var X=function(i){return pad+i*(w-2*pad)/(vals.length-1);};
+    var Y=function(v){return pad+(h-2*pad)*(1-(v-mn)/rng);};
+    var line=vals.map(function(v,i){return X(i).toFixed(1)+','+Y(v).toFixed(1);});
+    var area='M'+X(0).toFixed(1)+','+(h-pad)+' L'+line.join(' L ')+' L'+X(vals.length-1).toFixed(1)+','+(h-pad)+' Z';
+    var zeroY=Y(0);
+    var last=line[line.length-1].split(',');
+    var svg=document.getElementById('repTrend');
+    svg.innerHTML=''
+      + '<defs><linearGradient id="rg" x1="0" x2="0" y1="0" y2="1">'
+      + '<stop offset="0" stop-color="rgba(91,192,141,.30)"/><stop offset="1" stop-color="rgba(91,192,141,0)"/></linearGradient></defs>'
+      + '<line x1="'+pad+'" y1="'+zeroY.toFixed(1)+'" x2="'+(w-pad)+'" y2="'+zeroY.toFixed(1)+'" stroke="#32323E" stroke-width="1" stroke-dasharray="3 4"/>'
+      + '<text x="'+(w-pad)+'" y="'+(zeroY-5).toFixed(1)+'" text-anchor="end" fill="#787C86" font-family="IBM Plex Mono, monospace" font-size="9">0</text>'
+      + '<path d="'+area+'" fill="url(#rg)"/>'
+      + '<polyline points="'+line.join(' ')+'" fill="none" stroke="#5BC08D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.4" fill="#5BC08D" stroke="#08080B" stroke-width="2"/>'
+      + '<text x="'+last[0]+'" y="'+(parseFloat(last[1])-9).toFixed(1)+'" text-anchor="end" fill="#F5F6F7" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600">+19</text>';
+  })();
+
+  var SIGNALS=[{"s":"s","b":"1. Trust & Rapport Building","n":"Warmth & Presence","d":"Signals genuine openness and energy that invites connection.","c":"Relaxed tone, smiling voice, natural laughter.","m":"Tone + Body","a":"Cuddy et al. (2011) – Warmth & Competence","g":"","x":"C","p":"+","w":"Vocal warmth is a sentiment reading, not a timing one."},{"s":"s","b":"1. Trust & Rapport Building","n":"Care Proof","d":"Remembers details and follows up thoughtfully, showing personal investment.","c":"References prior calls, context, or milestones.","m":"Language + Context","a":"Relationship Selling / Emotional Contagion","g":"","x":"C","p":"+","w":"Continuity of context = depth of the relationship record."},{"s":"s","b":"1. Trust & Rapport Building","n":"Credibility Cues","d":"Speaks with calm clarity and grounded expertise that earns confidence.","c":"Steady tone, concise explanations, no filler.","m":"Language + Tone","a":"Sandler – Equal Business Stature","g":"","x":"C","p":"+","w":"Clarity and authority of what is said."},{"s":"s","b":"1. Trust & Rapport Building","n":"Safety Signaling","d":"Creates space for honest dialogue without judgment or tension.","c":"Invites correction: “Tell me if I’m off here.”","m":"Language + Tone + Body","a":"Edmondson (1999) – Psychological Safety","g":"","x":"C","p":"+","w":"Creates the conditions for honest disclosure."},{"s":"s","b":"1. Trust & Rapport Building","n":"Relational Sync","d":"Matches tone, tempo, and energy to buyer’s style to build trust.","c":"Mirrors pace or tone shifts fluidly.","m":"Tone + Body","a":"Communication Accommodation Theory","g":"","x":"V","p":"+","w":"Primary cue is mirroring pace and tempo."},{"s":"s","b":"2. Emotional Intelligence","n":"Read the Room","d":"Detects emotional shifts and adapts approach in real time.","c":"Adjusts tone or question type after energy change.","m":"Tone + Context","a":"Goleman (1998) – Emotional Competence","g":"","x":"C","p":"+","w":"Detects and responds to sentiment shift."},{"s":"s","b":"2. Emotional Intelligence","n":"Self-Regulation","d":"Stays calm and centered under pressure or pushback.","c":"Uses pauses, not defensiveness, during tension.","m":"Tone + Context","a":"Gross (1998) – Emotion Regulation","g":"","x":"C","p":"+","w":"Emotional control; pauses are the vehicle, not the signal."},{"s":"s","b":"2. Emotional Intelligence","n":"Empathic Reflection","d":"Names and validates emotion to build shared understanding.","c":"“Sounds like that’s been frustrating.”","m":"Language + Tone","a":"Rosenberg (2003) – Nonviolent Communication","g":"","x":"C","p":"+","w":"Names emotion - pure meaning work."},{"s":"s","b":"2. Emotional Intelligence","n":"Emotional Framing","d":"Recasts tension as curiosity or partnership.","c":"“Let’s unpack that together.”","m":"Language + Tone","a":"Cognitive Reappraisal Theory","g":"","x":"C","p":"+","w":"Recasts sentiment from tension to partnership."},{"s":"s","b":"2. Emotional Intelligence","n":"Steady Presence","d":"Maintains consistent, calm energy even in uncertainty.","c":"Stable tone; avoids spikes in pitch or pace.","m":"Tone + Body","a":"Adaptive Performance Research","g":"","x":"V","p":"+","w":"Cue is explicitly absence of spikes in pitch or pace."},{"s":"s","b":"3. High-Impact Questioning","n":"Curiosity with Purpose","d":"Asks questions that reveal motive, not just need.","c":"“Why is that the top priority right now?”","m":"Language","a":"Rackham (1988) – SPIN Selling","g":"","x":"C","p":"+","w":"Extracts motive - deepens the exchange."},{"s":"s","b":"3. High-Impact Questioning","n":"Consequence Framing","d":"Surfaces cost of inaction or delay.","c":"“What happens if this stays the same next quarter?”","m":"Language + Tone","a":"Challenger Sale","g":"","x":"P","p":"+","w":"Manufactures cost-of-inaction; drives toward a decision."},{"s":"s","b":"3. High-Impact Questioning","n":"Pattern Break","d":"Uses unexpected, insight-driven questions to reset thinking.","c":"Buyer pauses before responding.","m":"Language + Context","a":"Challenger / Insight Selling","g":"","x":"C","p":"+","w":"Insight delivery that changes how the buyer thinks."},{"s":"s","b":"3. High-Impact Questioning","n":"Story Trigger","d":"Prompts buyer stories that expose context.","c":"“Walk me through what happened last time.”","m":"Language","a":"Narrative Psychology","g":"","x":"C","p":"+","w":"Elicits context and disclosure."},{"s":"s","b":"3. High-Impact Questioning","n":"Intentional Silence","d":"Uses silence to create cognitive space for reflection.","c":"Waits 2–3 seconds post-question.","m":"Context + Tone","a":"Harvard Negotiation Research","g":"","x":"V","p":"~","w":"Cue is a measured 2-3 second wait - timing."},{"s":"s","b":"4. Active Listening","n":"Playback","d":"Restates buyer meaning to confirm understanding.","c":"“So it sounds like your main concern is…”","m":"Language","a":"Rogers (1951) – Reflective Listening","g":"","x":"C","p":"+","w":"Confirms shared meaning."},{"s":"s","b":"4. Active Listening","n":"Signal Spotting","d":"Detects tonal or verbal cues that reveal emotion.","c":"Asks clarifying question on shift in tone.","m":"Tone + Context","a":"Conversational Analysis","g":"","x":"C","p":"+","w":"Reads tonal and emotional cues."},{"s":"s","b":"4. Active Listening","n":"Conversational Balance","d":"Keeps dialogue flowing with natural airtime symmetry.","c":"Buyer talk ratio ≈ 50%.","m":"Context + Language","a":"Gong.io Sales Data","g":"","x":"V","p":"~","w":"Talk ratio is an airtime/rhythm metric with a healthy band."},{"s":"s","b":"4. Active Listening","n":"Thread Recall","d":"References past comments to show attention.","c":"“Earlier you mentioned onboarding delays…”","m":"Language + Context","a":"Dialogue Recall Studies","g":"","x":"C","p":"+","w":"Depth of retained context."},{"s":"s","b":"4. Active Listening","n":"Alignment Check","d":"Confirms shared meaning before advancing.","c":"“Am I tracking that correctly?”","m":"Language + Context","a":"Argyris (1991) – Double-Loop Learning","g":"","x":"C","p":"+","w":"Verifies meaning; no deal state changes."},{"s":"s","b":"5. Value Framing","n":"Outcome Anchoring","d":"Connects every point to measurable buyer outcomes.","c":"“That’s how teams cut cycle time by 30%.”","m":"Language","a":"Challenger / Solution Selling","g":"","x":"P","p":"+","w":"Builds the measurable case a decision rests on."},{"s":"s","b":"5. Value Framing","n":"Cost of Same","d":"Quantifies risk or pain of status quo.","c":"“What’s the real cost if this slips another quarter?”","m":"Language","a":"Kahneman & Tversky (1979) – Prospect Theory","g":"","x":"P","p":"+","w":"Quantifies status-quo risk - a risk-register move."},{"s":"s","b":"5. Value Framing","n":"Buyer-as-Hero","d":"Frames buyer as the central driver of change.","c":"“You’d be leading that shift.”","m":"Language + Tone","a":"Narrative Transportation Theory","g":"","x":"C","p":"+","w":"Narrative framing; sentiment work."},{"s":"s","b":"5. Value Framing","n":"Contrast Framing","d":"Paints vivid before/after to make value tangible.","c":"Uses visual metaphor or comparison.","m":"Language + Tone","a":"Dual-Coding Theory","g":"","x":"C","p":"+","w":"Makes value vivid - meaning, not motion."},{"s":"s","b":"5. Value Framing","n":"Shared Win","d":"Uses inclusive “we” language signaling partnership.","c":"“Together we’ll drive that lift.”","m":"Language + Tone","a":"Social Exchange Theory","g":"","x":"C","p":"+","w":"Inclusive language signalling alignment."},{"s":"s","b":"6. Objection Handling","n":"Surface Early","d":"Proactively brings up likely concerns.","c":"“What questions might leadership ask?”","m":"Language","a":"Sandler / Challenger Proactivity","g":"","x":"P","p":"+","w":"Proactively opens a risk so it can be closed."},{"s":"s","b":"6. Objection Handling","n":"Validate Before Solve","d":"Acknowledges emotion before addressing logic.","c":"“That’s a fair concern.”","m":"Language + Tone","a":"Rosenberg – NVC","g":"","x":"C","p":"+","w":"Acknowledges emotion before logic."},{"s":"s","b":"6. Objection Handling","n":"Reframe the Risk","d":"Turns objection into insight or opportunity.","c":"“That’s exactly why others chose to switch.”","m":"Language","a":"Cognitive Reappraisal","g":"","x":"P","p":"+","w":"Converts an open risk into a reason to move."},{"s":"s","b":"6. Objection Handling","n":"Proof in Motion","d":"Uses concise social proof or evidence.","c":"“A client like you saw ROI in 30 days.”","m":"Language + Context","a":"Cialdini (2001) – Social Proof","g":"","x":"P","p":"+","w":"Evidence deployed to retire a specific objection."},{"s":"s","b":"6. Objection Handling","n":"Confirm & Close","d":"Verifies that objection is resolved.","c":"“Did that answer it for you?”","m":"Language + Context","a":"Feedback Loop Research","g":"","x":"P","p":"+","w":"Explicitly verifies a risk is closed."},{"s":"s","b":"7. Technical Competence","n":"Fluent Simplification","d":"Makes complex ideas simple and relatable.","c":"“Think of it like your existing workflow — just automated.”","m":"Language + Tone","a":"Cognitive Load Theory","g":"","x":"C","p":"+","w":"Reduces cognitive load in the exchange."},{"s":"s","b":"7. Technical Competence","n":"Confident Depth","d":"Demonstrates mastery concisely and calmly.","c":"Precise, steady answers.","m":"Tone + Language","a":"Ericsson (2008) – Expert Performance","g":"","x":"C","p":"+","w":"Quality and authority of the answer."},{"s":"s","b":"7. Technical Competence","n":"Diagnostic Dialogue","d":"Uses probing questions to uncover fit.","c":"“Which integrations matter most to you?”","m":"Language + Context","a":"Consultative Selling","g":"","x":"C","p":"+","w":"Probing for fit - discovery, not advance."},{"s":"s","b":"7. Technical Competence","n":"Real-World Proof","d":"Supports points with relevant cases.","c":"“Another client with your setup used this to…”","m":"Language","a":"Case-Based Reasoning","g":"","x":"C","p":"+","w":"General credibility, not tied to an open objection."},{"s":"s","b":"7. Technical Competence","n":"Adaptive Language","d":"Adjusts jargon to buyer literacy.","c":"Simplifies instantly when confusion appears.","m":"Language + Tone","a":"Adaptive Selling Theory","g":"","x":"C","p":"+","w":"Tunes register to buyer literacy."},{"s":"s","b":"8. Pacing & Flow Management","n":"Tempo Control","d":"Adjusts conversation speed to buyer engagement.","c":"Matches or slows tempo as needed.","m":"Tone + Context","a":"Communication Accommodation Theory","g":"","x":"V","p":"~","w":"Conversation speed, explicitly."},{"s":"s","b":"8. Pacing & Flow Management","n":"Energy Matching","d":"Tunes vocal energy to buyer emotion.","c":"Modulates voice dynamically.","m":"Tone + Body","a":"Attunement Theory","g":"","x":"V","p":"~","w":"Vocal energy modulation over time."},{"s":"s","b":"8. Pacing & Flow Management","n":"Flow Recovery","d":"Re-centers conversation after disruption.","c":"Uses humor or acknowledgment to reset.","m":"Tone + Context","a":"Conversation Repair Theory","g":"","x":"V","p":"+","w":"Restores rhythm after disruption."},{"s":"s","b":"8. Pacing & Flow Management","n":"Strategic Pause","d":"Uses silence for emphasis or processing time.","c":"Intentional short pauses.","m":"Context + Tone","a":"Cognitive Processing Research","g":"","x":"V","p":"+","w":"Silence used as timing."},{"s":"s","b":"8. Pacing & Flow Management","n":"Transition Clarity","d":"Signals movement between topics.","c":"“Before we move to next steps…”","m":"Language + Context","a":"Behavioral Coordination Studies","g":"","x":"V","p":"+","w":"Structural signalling of movement between topics."},{"s":"s","b":"9. Call Control & Agenda Management","n":"Set the Map","d":"Establishes meeting direction and purpose up front.","c":"“Here’s what we’ll cover today.”","m":"Language + Context","a":"Sandler – Up-Front Contract","g":"","x":"P","p":"+","w":"Up-front contract - establishes what will advance."},{"s":"s","b":"9. Call Control & Agenda Management","n":"Guide the Flow","d":"Keeps discussion aligned without rigidity.","c":"Redirects off-topic threads smoothly.","m":"Language + Context","a":"Conversational Leadership","g":"","x":"V","p":"+","w":"Keeps the conversation's rhythm on track."},{"s":"s","b":"9. Call Control & Agenda Management","n":"Manage the Clock","d":"Balances depth and time across agenda.","c":"Announces time checkpoints.","m":"Context","a":"Meeting Science Research","g":"","x":"V","p":"+","w":"Time checkpoints - pure timing."},{"s":"s","b":"9. Call Control & Agenda Management","n":"Frame the Decision","d":"Prepares buyer for a decision moment.","c":"“We’ll decide today if this warrants a deeper dive.”","m":"Language + Context","a":"SPIN / Sandler Decision Framing","g":"","x":"P","p":"+","w":"Stages an explicit decision moment."},{"s":"s","b":"9. Call Control & Agenda Management","n":"Own the Follow","d":"Takes clear responsibility for next steps.","c":"“I’ll send the recap by end of day.”","m":"Language + Context","a":"Ownership Bias Research","g":"","x":"P","p":"+","w":"Names a next step and an owner."},{"s":"s","b":"10. Closing Behaviors","n":"Readiness Test","d":"Gauges buyer comfort and intent before asking.","c":"“How’s this aligning so far?”","m":"Language + Tone","a":"Incremental Commitment Research","g":"","x":"P","p":"+","w":"Tests whether the deal can take a step."},{"s":"s","b":"10. Closing Behaviors","n":"Recap Close","d":"Summarizes core value before inviting commitment.","c":"“Here’s what we solved today…”","m":"Language","a":"Persuasion Psychology","g":"","x":"P","p":"+","w":"Consolidates the case immediately before the ask."},{"s":"s","b":"10. Closing Behaviors","n":"Confident Ask","d":"Makes a clear, assumptive invitation to proceed.","c":"“Let’s lock in next week to kick this off.”","m":"Language + Tone","a":"Challenger / NLP Anchoring","g":"","x":"P","p":"+","w":"Requests the state change directly."},{"s":"s","b":"10. Closing Behaviors","n":"Choice Simplifier","d":"Offers simple, binary next steps to reduce friction.","c":"“Would you prefer A or B?”","m":"Language","a":"Decision Simplicity Research","g":"","x":"P","p":"+","w":"Reduces friction on the next step itself."},{"s":"s","b":"10. Closing Behaviors","n":"Micro-Commit","d":"Secures incremental verbal agreement.","c":"“Does that feel like the right direction?”","m":"Language + Tone","a":"Commitment & Consistency (Cialdini)","g":"","x":"P","p":"+","w":"Secures an incremental agreement."},{"s":"b","b":"1. Engagement Level","n":"Verbal Participation","d":"Buyer contributes actively rather than passively listening.","c":"Frequent responses, short latency, balanced talk ratio.","m":"Language + Context","a":"","g":"Behavioral","x":"V","p":"+","w":"Cue is response frequency, latency and talk ratio."},{"s":"b","b":"1. Engagement Level","n":"Nonverbal Responsiveness","d":"Uses supportive sounds or vocal affirmations to maintain connection.","c":"“Yeah,” “Right,” light laughter, affirmative tone.","m":"Tone + Body","a":"","g":"Emotional","x":"C","p":"+","w":"Affirmative sounds - sentiment."},{"s":"b","b":"1. Engagement Level","n":"Focused Curiosity","d":"Asks spontaneous, clarifying questions indicating sustained focus.","c":"“How does that integrate with…”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Spontaneous clarifying questions."},{"s":"b","b":"1. Engagement Level","n":"Reciprocal Disclosure","d":"Shares relevant internal details, mirroring seller openness.","c":"“We actually had that issue last quarter.”","m":"Language + Tone","a":"","g":"Emotional","x":"C","p":"+","w":"Depth of what the buyer volunteers."},{"s":"b","b":"1. Engagement Level","n":"Relational Energy","d":"Displays enthusiasm, warmth, or humor in voice.","c":"Smiling tone, quick laughter, rising inflection.","m":"Tone + Body","a":"","g":"Emotional","x":"C","p":"+","w":"Warmth toward the person - sentiment, not tempo."},{"s":"b","b":"2. Trust Indicators","n":"Openness of Tone","d":"Vocal tone softens and pace steadies as safety increases.","c":"Relaxed pitch, fewer fillers.","m":"Tone","a":"","g":"Emotional","x":"C","p":"+","w":"Tone softening is a sentiment reading."},{"s":"b","b":"2. Trust Indicators","n":"Information Willingness","d":"Voluntarily shares internal data or context.","c":"Reveals internal constraints or real decision factors.","m":"Language","a":"","g":"Behavioral","x":"C","p":"+","w":"Voluntary disclosure depth."},{"s":"b","b":"2. Trust Indicators","n":"Assumed Competence","d":"Expresses confidence in seller’s expertise or guidance.","c":"“I’ll defer to your experience.”","m":"Language + Tone","a":"","g":"Cognitive","x":"C","p":"+","w":"Expressed confidence in the seller."},{"s":"b","b":"2. Trust Indicators","n":"Reduced Guarding","d":"Drops defensive qualifiers and over-justification.","c":"Fewer hedges (“maybe,” “sort of”).","m":"Language","a":"","g":"Emotional","x":"C","p":"+","w":"Hedge density - the classic hedging signal."},{"s":"b","b":"2. Trust Indicators","n":"Mirrored Warmth","d":"Adopts similar tone or pacing as seller unconsciously.","c":"Matches inflection, energy, or tempo.","m":"Tone + Body","a":"","g":"Emotional","x":"V","p":"+","w":"Cue is matched inflection, energy and tempo."},{"s":"b","b":"3. Alignment & Agreement Signals","n":"Verbal Agreement","d":"Buyer explicitly affirms or echoes key points.","c":"“Exactly,” “That’s right,” “We’ve been saying that too.”","m":"Language","a":"","g":"Behavioral","x":"C","p":"+","w":"Explicit affirmation - sentiment, not a decision."},{"s":"b","b":"3. Alignment & Agreement Signals","n":"Collaborative Language","d":"Shifts to inclusive “we” phrasing, signaling shared vision.","c":"“We could do that,” “Our team could adapt.”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Inclusive 'we' phrasing."},{"s":"b","b":"3. Alignment & Agreement Signals","n":"Cognitive Linking","d":"Connects seller ideas to internal realities.","c":"“That reminds me of how we handled X.”","m":"Language + Context","a":"","g":"Cognitive","x":"C","p":"+","w":"Connects the pitch to internal reality."},{"s":"b","b":"3. Alignment & Agreement Signals","n":"Clarifying Inquiry","d":"Asks questions to deepen mutual understanding.","c":"“So that means it integrates directly?”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Deepens mutual understanding."},{"s":"b","b":"3. Alignment & Agreement Signals","n":"Tone Convergence","d":"Voice rhythm and energy align with seller’s.","c":"Matched pace and cadence.","m":"Tone","a":"","g":"Emotional","x":"V","p":"+","w":"Matched pace and cadence."},{"s":"b","b":"4. Interest Peaks","n":"Verbal Curiosity","d":"Initiates exploratory questions about product fit.","c":"“Can you show me that?”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Exploratory questioning."},{"s":"b","b":"4. Interest Peaks","n":"Affective Response","d":"Displays positive emotion to a point of value.","c":"“That’s awesome,” laughter, upbeat tone.","m":"Tone + Body","a":"","g":"Emotional","x":"C","p":"+","w":"Positive emotion at a value point."},{"s":"b","b":"4. Interest Peaks","n":"Future Focus Language","d":"Speaks as if implementation is being imagined.","c":"“When we roll this out…”","m":"Language","a":"","g":"Decision","x":"C","p":"+","w":"Conditional future language - a readiness gradient, not an act."},{"s":"b","b":"4. Interest Peaks","n":"Micro-Interrupt","d":"Interrupts to build on an exciting point.","c":"“Wait—so that means…”","m":"Context + Language","a":"","g":"Behavioral","x":"V","p":"+","w":"Turn-taking latency collapses - a rhythm event."},{"s":"b","b":"4. Interest Peaks","n":"Echo Alignment","d":"Repeats seller keywords or metaphors unconsciously.","c":"“Yeah, that dashboard idea…”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Unconscious language adoption."},{"s":"b","b":"5. Objection Framing","n":"Clarifying Pushback","d":"Challenges or probes to ensure understanding.","c":"“Can you clarify how that applies to us?”","m":"Language","a":"","g":"Cognitive","x":"C","p":"~","w":"Probing to understand - healthy in moderation."},{"s":"b","b":"5. Objection Framing","n":"Legitimate Concern","d":"Raises a specific, solvable objection.","c":"“That might stretch our current capacity.”","m":"Language","a":"","g":"Cognitive","x":"P","p":"~","w":"A specific solvable objection enters the risk register."},{"s":"b","b":"5. Objection Framing","n":"Emotional Resistance","d":"Displays friction through tone, pacing, or volume.","c":"Lower pitch, clipped tone, slower tempo.","m":"Tone","a":"","g":"Emotional","x":"C","p":"-","w":"Friction carried in tone."},{"s":"b","b":"5. Objection Framing","n":"Reframe Openness","d":"Signals acceptance of new perspective.","c":"“That makes sense now.”","m":"Language + Tone","a":"","g":"Cognitive","x":"P","p":"+","w":"A previously open risk visibly closes."},{"s":"b","b":"5. Objection Framing","n":"Decision Influence Reference","d":"Cites internal stakeholder as part of objection.","c":"“Our CFO will ask about ROI.”","m":"Language + Context","a":"","g":"Contextual","x":"P","p":"~","w":"Names a stakeholder in the decision path."},{"s":"b","b":"6. Decision Readiness Signals","n":"Commitment Language","d":"Speaks in terms of future ownership.","c":"“If we move forward…”","m":"Language","a":"","g":"Decision","x":"C","p":"+","w":"Conditional 'if we move forward' - still a gradient."},{"s":"b","b":"6. Decision Readiness Signals","n":"Risk Resolution","d":"Verbally resolves prior hesitation.","c":"“That actually sounds manageable.”","m":"Language + Tone","a":"","g":"Cognitive","x":"P","p":"+","w":"States that a prior hesitation is resolved."},{"s":"b","b":"6. Decision Readiness Signals","n":"Ownership Speech","d":"Takes initiative on internal next steps.","c":"“I’ll share this with my VP.”","m":"Language","a":"","g":"Behavioral","x":"P","p":"+","w":"Names a person and an action - a real advance."},{"s":"b","b":"6. Decision Readiness Signals","n":"Urgency Signal","d":"Expresses time pressure or eagerness.","c":"“We’d want this live by next quarter.”","m":"Tone + Context","a":"","g":"Emotional","x":"P","p":"+","w":"Names a timeline the decision must meet."},{"s":"b","b":"6. Decision Readiness Signals","n":"Confidence Shift","d":"Moves from tentative to decisive tone.","c":"Firmer voice, faster tempo.","m":"Tone","a":"","g":"Emotional","x":"V","p":"+","w":"Firmer voice, faster tempo - explicitly tempo."},{"s":"b","b":"7. Defensiveness or Hesitation","n":"Question Deflection","d":"Avoids or redirects challenging topics.","c":"“Well, it depends…”","m":"Language","a":"","g":"Cognitive","x":"C","p":"-","w":"Avoids meaning-making."},{"s":"b","b":"7. Defensiveness or Hesitation","n":"Tone Tightening","d":"Voice constricts or speeds under stress.","c":"Short phrases, faster pace.","m":"Tone","a":"","g":"Emotional","x":"V","p":"-","w":"Short phrases, faster pace - a tempo change."},{"s":"b","b":"7. Defensiveness or Hesitation","n":"Information Guarding","d":"Restricts disclosure or downplays details.","c":"“I’m not sure I can share that.”","m":"Language","a":"","g":"Behavioral","x":"C","p":"-","w":"Disclosure depth collapses."},{"s":"b","b":"7. Defensiveness or Hesitation","n":"Over-Qualification","d":"Adds unnecessary explanation to justify.","c":"“I mean technically yes, but…”","m":"Language","a":"","g":"Cognitive","x":"C","p":"-","w":"Hedging density rises."},{"s":"b","b":"7. Defensiveness or Hesitation","n":"Reassurance Seeking","d":"Looks to seller for confirmation.","c":"“Does that make sense?”","m":"Tone + Language","a":"","g":"Emotional","x":"C","p":"-","w":"Confidence gap expressed as sentiment."},{"s":"b","b":"8. Information Sharing Depth","n":"Surface-Level Sharing","d":"Provides vague or generic responses.","c":"Broad, non-specific statements.","m":"Language","a":"","g":"Behavioral","x":"C","p":"-","w":"Low-depth, generic responses."},{"s":"b","b":"8. Information Sharing Depth","n":"Detail Disclosure","d":"Offers granular process or data details.","c":"Names tools, teams, workflows.","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Granular process and data detail."},{"s":"b","b":"8. Information Sharing Depth","n":"Strategic Openness","d":"Reveals controlled but meaningful information.","c":"“Here’s what I can tell you about that.”","m":"Language + Tone","a":"","g":"Cognitive","x":"C","p":"+","w":"Controlled but meaningful disclosure."},{"s":"b","b":"8. Information Sharing Depth","n":"Narrative Expansion","d":"Shares context through mini-stories or analogies.","c":"“Here’s what happened last quarter…”","m":"Language","a":"","g":"Emotional","x":"C","p":"+","w":"Context delivered as story."},{"s":"b","b":"8. Information Sharing Depth","n":"Reciprocity Triggering","d":"Responds with info after seller disclosure.","c":"“We’ve been doing something similar.”","m":"Context + Language","a":"","g":"Emotional","x":"C","p":"+","w":"Discloses in response to seller disclosure."},{"s":"b","b":"9. Commitment Language","n":"Future Orientation","d":"Uses future-tense phrases that imply movement.","c":"“When we implement this…”","m":"Language","a":"","g":"Decision","x":"C","p":"+","w":"'When we implement' - the classic language shift."},{"s":"b","b":"9. Commitment Language","n":"Ownership Talk","d":"Personalizes benefit or responsibility.","c":"“My team will love this.”","m":"Language","a":"","g":"Behavioral","x":"C","p":"+","w":"Personalises the benefit - sentiment."},{"s":"b","b":"9. Commitment Language","n":"Agreement Density","d":"Provides quick verbal affirmations near close.","c":"“Yep,” “That works,” “Perfect.”","m":"Language + Context","a":"","g":"Behavioral","x":"V","p":"+","w":"Rate of affirmation per unit of talk near close."},{"s":"b","b":"9. Commitment Language","n":"Intent Declaration","d":"States clear desire or action.","c":"“Let’s move forward.”","m":"Language","a":"","g":"Decision","x":"P","p":"+","w":"'Let's move forward' - a declared decision."},{"s":"b","b":"9. Commitment Language","n":"Action Alignment","d":"Aligns commitment with logistical step.","c":"“Let’s set time next week.”","m":"Context + Language","a":"","g":"Decision","x":"P","p":"+","w":"Ties commitment to a logistical step with a date."},{"s":"b","b":"10. Buying Temperature Change","n":"Energy Lift","d":"Noticeable increase in tone, volume, or pace.","c":"Faster speech, brighter tone.","m":"Tone","a":"","g":"Emotional","x":"V","p":"+","w":"Faster speech, brighter tone - tempo and energy."},{"s":"b","b":"10. Buying Temperature Change","n":"Loss Aversion Spike","d":"Expresses fear of delay or missing out.","c":"“We don’t want to fall behind.”","m":"Language","a":"","g":"Cognitive","x":"P","p":"+","w":"Fear of delay compresses the decision timeline."},{"s":"b","b":"10. Buying Temperature Change","n":"Urgency Alignment","d":"Matches seller’s forward motion and tone.","c":"“Let’s get this done.”","m":"Tone + Context","a":"","g":"Behavioral","x":"V","p":"+","w":"Matches the seller's forward tempo."},{"s":"b","b":"10. Buying Temperature Change","n":"Future Visualization","d":"Describes post-purchase reality.","c":"“Once we roll this out…”","m":"Language","a":"","g":"Cognitive","x":"C","p":"+","w":"Describes the post-purchase world - language."},{"s":"b","b":"10. Buying Temperature Change","n":"Final Confirmation","d":"Seeks closing reassurance.","c":"“So we’re good to move forward then?”","m":"Language + Tone","a":"","g":"Decision","x":"P","p":"+","w":"Seeks the closing state change explicitly."}];
+
+  // ================= EVIDENCE BASE =================
+  var DIMS = {
+    V:{name:'Velocity',   q:'Is this conversation moving at the pace of a deal that wants to close?',
+       foot:'Velocity is the only dimension that can be read without understanding a single word. It is rhythm — latency, tempo, airtime, energy. That makes it the fastest signal to compute and the easiest to misread in isolation: a fast, warm, high-tempo call that produces no next step is still a stalled deal.'},
+    C:{name:'Communication', q:'Is the exchange getting deeper, safer and more honest — or thinner and more guarded?',
+       foot:'The largest dimension by far, and the one the CRM is blindest to. It holds the whole trust arc, the disclosure depth, and the hedging-to-conviction gradient. Note that commitment <em>language</em> lives here — an actual commitment does not. "If we move forward" is Communication; "Let’s move forward" is Progression.'},
+    P:{name:'Progression', q:'Did anything actually change — a decision, a person, a date, a risk?',
+       foot:'The smallest dimension and the hardest to fake. Progression only moves when something in the deal’s state changes: a named stakeholder, a booked step, an objection retired, a risk logged. It is the check on the other two — a deal can be fast and warm for weeks while Progression sits flat, and that pattern is exactly what Hunter exists to surface.'}
+  };
+  var POL = {'+':['up','↑'], '-':['dn','↓'], '~':['bi','↕']};
+
+  function bySide(s){ return SIGNALS.filter(function(r){return r.s===s;}); }
+
+  // ---- behaviour matrix ----
+  function matrix(side, el){
+    var order=[], grp={};
+    bySide(side).forEach(function(r){
+      if(!grp[r.b]){ grp[r.b]={V:0,C:0,P:0}; order.push(r.b); }
+      grp[r.b][r.x]++;
+    });
+    el.innerHTML = order.map(function(b){
+      var c=grp[b], segs='';
+      ['V','C','P'].forEach(function(d){ for(var i=0;i<c[d];i++) segs+='<i class="bg-'+d+'"></i>'; });
+      var m=b.match(/^(\d+)\.\s*(.*)$/);
+      return '<div class="mxr"><div class="bn"><i>'+(m?m[1]:'')+'</i>'+(m?m[2]:b)+'</div>'
+           + '<div class="seg" title="Velocity '+c.V+' · Communication '+c.C+' · Progression '+c.P+'">'+segs+'</div></div>';
+    }).join('');
+  }
+  matrix('s', document.getElementById('mxSeller'));
+  matrix('b', document.getElementById('mxBuyer'));
+
+  // ---- dossiers ----
+  function sideBlock(rows, label){
+    var order=[], grp={};
+    rows.forEach(function(r){ if(!grp[r.b]){grp[r.b]=[]; order.push(r.b);} grp[r.b].push(r); });
+    var body = order.length ? order.map(function(b){
+      return '<div class="grp"><div class="gh">'+b+'</div><ul>' + grp[b].map(function(r){
+        var p=POL[r.p];
+        return '<li><u class="'+p[0]+'">'+p[1]+'</u>'+r.n+'</li>';
+      }).join('') + '</ul></div>';
+    }).join('') : '<p style="color:var(--ink-mute);font-size:13px;margin:0">No signals from this side.</p>';
+    return '<div class="dos-side"><p class="cap"><span>'+label+'</span><span>'+rows.length+' signals</span></p>'+body+'</div>';
+  }
+  document.getElementById('dossiers').innerHTML = ['V','C','P'].map(function(d){
+    var all=SIGNALS.filter(function(r){return r.x===d;});
+    var s=all.filter(function(r){return r.s==='s';}), b=all.filter(function(r){return r.s==='b';});
+    return '<div class="dossier '+d+'">'
+      + '<div class="dos-h"><div><h3 class="t-'+d+'">'+DIMS[d].name+'</h3><p class="q">'+DIMS[d].q+'</p></div>'
+      + '<div class="dos-n"><b class="t-'+d+'">'+all.length+'</b><span>of 100</span></div></div>'
+      + '<div class="dos-body">'+sideBlock(s,'Seller side')+sideBlock(b,'Buyer side')+'</div>'
+      + '<div class="dos-foot">'+DIMS[d].foot+'</div></div>';
+  }).join('');
+
+  // ---- filterable register ----
+  var F={dim:'all', side:'all'};
+  function renderTable(){
+    var rows=SIGNALS.filter(function(r){
+      return (F.dim==='all'||r.x===F.dim) && (F.side==='all'||r.s===F.side);
+    });
+    document.getElementById('fcount').textContent = rows.length + (rows.length===1?' signal':' signals');
+    document.getElementById('tblRows').innerHTML = rows.length ? rows.map(function(r){
+      var p=POL[r.p];
+      return '<div class="tr">'
+        + '<span class="pol '+p[0]+'" title="'+(r.p==='+'?'Raises momentum':r.p==='-'?'Lowers momentum':'Bipolar — has a healthy band')+'">'+p[1]+'</span>'
+        + '<div><div class="nm">'+r.n+'</div><div class="src">'+(r.s==='s'?'Seller':'Buyer')+' · '+r.b.replace(/^\d+\.\s*/,'')+'</div></div>'
+        + '<div class="dfn">'+r.d+'</div>'
+        + '<div class="cue">'+r.c+'</div>'
+        + '<div class="rt"><span class="pill '+r.x+'">'+DIMS[r.x].name+'</span>'
+        + '<span class="sidetag">'+r.m+'</span></div>'
+        + '</div>';
+    }).join('') : '<div class="empty">No signals match that combination.</div>';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(btn){
+    btn.addEventListener('click', function(){
+      var f=btn.dataset.f;
+      F[f]=btn.dataset.v;
+      Array.prototype.forEach.call(document.querySelectorAll('.chip[data-f="'+f+'"]'), function(o){
+        o.setAttribute('aria-pressed', String(o===btn));
+      });
+      renderTable();
+    });
+  });
+  renderTable();
+
+</script>
