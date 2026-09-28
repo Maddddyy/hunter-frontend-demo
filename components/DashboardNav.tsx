@@ -46,7 +46,7 @@ export default function DashboardNav({ children }: { children: React.ReactNode }
                         : 'text-piloteer-metal hover:text-piloteer-ink hover:bg-piloteer-surface-2'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon />
                     <span>{item.label}</span>
                   </Link>
                 );

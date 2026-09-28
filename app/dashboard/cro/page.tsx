@@ -307,6 +307,7 @@ export default function CRODashboard() {
           </div>
         </section>
       </div>
+      </div>
     </DashboardNav>
   );
 }

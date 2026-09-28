@@ -256,6 +256,7 @@ export default function SellerDashboard() {
           </div>
         </section>
       </div>
+      </div>
     </DashboardNav>
   );
 }

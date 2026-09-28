@@ -230,6 +230,7 @@ export default function ManagerDashboard() {
           </div>
         </section>
       </div>
+      </div>
     </DashboardNav>
   );
 }
