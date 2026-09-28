@@ -56,6 +56,7 @@ type TeachAction =
   | { type: 'UPDATE_COMPETITOR'; productId: string; compId: string; field: string; value: string }
   | { type: 'REMOVE_COMPETITOR'; productId: string; compId: string }
   | { type: 'ADD_COMPARISON_ADVANTAGE'; productId: string; advantage: ComparisonAdvantage }
+  | { type: 'UPDATE_COMPARISON_ADVANTAGE'; productId: string; advId: string; field: string; value: string }
   | { type: 'REMOVE_COMPARISON_ADVANTAGE'; productId: string; advId: string }
   | { type: 'ADD_MARKET_SIGNAL'; productId: string; category: string; signal: MarketSignal }
   | { type: 'REMOVE_MARKET_SIGNAL'; productId: string; category: string; signalId: string }
@@ -381,6 +382,21 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
         products: state.products.map(p =>
           p.id === action.productId
             ? { ...p, comparisonAdvantages: [...p.comparisonAdvantages, action.advantage] }
+            : p
+        ),
+      };
+    
+    case 'UPDATE_COMPARISON_ADVANTAGE':
+      return {
+        ...state,
+        products: state.products.map(p =>
+          p.id === action.productId
+            ? {
+                ...p,
+                comparisonAdvantages: p.comparisonAdvantages.map(a =>
+                  a.id === action.advId ? { ...a, [action.field]: action.value } : a
+                ),
+              }
             : p
         ),
       };
@@ -751,7 +767,13 @@ export default function TeachPage() {
       p.description.length > 20 &&
       p.personas.length > 0 &&
       p.keyQuestions.length > 0 &&
-      p.competitors.length > 0
+      p.competitors.length > 0 &&
+      // Use completedSections for accurate completion tracking
+      p.completedSections.about &&
+      p.completedSections.personas &&
+      p.completedSections.keySignals &&
+      p.completedSections.competitive &&
+      p.completedSections.marketInfo
   );
   const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;
   const canGoLive = state.visibility.sensing && allProductsComplete && unresolvedContradictions === 0;
@@ -1448,6 +1470,20 @@ function ProductPersonasStep({
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
 }) {
+  const [expandedPersonas, setExpandedPersonas] = useState<Set<string>>(
+    new Set(product.personas.map(p => p.id))
+  );
+
+  const toggleExpanded = (personaId: string) => {
+    const newExpanded = new Set(expandedPersonas);
+    if (newExpanded.has(personaId)) {
+      newExpanded.delete(personaId);
+    } else {
+      newExpanded.add(personaId);
+    }
+    setExpandedPersonas(newExpanded);
+  };
+
   const handleAddPersona = () => {
     const newPersona: Persona = {
       id: `persona-${Date.now()}`,
@@ -1457,6 +1493,8 @@ function ProductPersonasStep({
     };
     dispatch({ type: 'ADD_PERSONA', productId: product.id, persona: newPersona });
     showToast('Persona added');
+    // Auto-expand new persona
+    setExpandedPersonas(new Set([...expandedPersonas, newPersona.id]));
   };
 
   return (
@@ -1466,55 +1504,79 @@ function ProductPersonasStep({
       </p>
 
       <div className="space-y-4">
-        {product.personas.map((persona) => (
-          <div key={persona.id} className="card bg-piloteer-black border-piloteer-hair-2">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={persona.name}
-                  onChange={(e) =>
-                    dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'name', value: e.target.value })
-                  }
-                  className="bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-ink font-semibold focus:border-piloteer-focus focus:outline-none transition-colors"
-                  placeholder="Persona name (e.g., CRO)"
-                />
-                <input
-                  type="text"
-                  value={persona.role}
-                  onChange={(e) =>
-                    dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'role', value: e.target.value })
-                  }
-                  className="bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-metal text-sm focus:border-piloteer-focus focus:outline-none transition-colors"
-                  placeholder="Role (e.g., Economic Buyer)"
-                />
+        {product.personas.map((persona) => {
+          const isExpanded = expandedPersonas.has(persona.id);
+          return (
+            <div key={persona.id} className="card bg-piloteer-black border-piloteer-hair-2">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1 grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={persona.name}
+                    onChange={(e) =>
+                      dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'name', value: e.target.value })
+                    }
+                    className="bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-ink font-semibold focus:border-piloteer-focus focus:outline-none transition-colors"
+                    placeholder="Persona name (e.g., CRO)"
+                  />
+                  <input
+                    type="text"
+                    value={persona.role}
+                    onChange={(e) =>
+                      dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'role', value: e.target.value })
+                    }
+                    className="bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-metal text-sm focus:border-piloteer-focus focus:outline-none transition-colors"
+                    placeholder="Role (e.g., Economic Buyer)"
+                  />
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <button
+                    onClick={() => toggleExpanded(persona.id)}
+                    className="text-piloteer-metal hover:text-piloteer-ink transition-colors"
+                    title={isExpanded ? 'Collapse' : 'Expand'}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      dispatch({ type: 'REMOVE_PERSONA', productId: product.id, personaId: persona.id });
+                      showToast('Persona removed');
+                    }}
+                    className="text-piloteer-signal hover:text-piloteer-ink transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => {
-                  dispatch({ type: 'REMOVE_PERSONA', productId: product.id, personaId: persona.id });
-                  showToast('Persona removed');
-                }}
-                className="ml-3 text-piloteer-signal hover:text-piloteer-ink transition-colors"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
-              </button>
+              {isExpanded && (
+                <div>
+                  <span className="eyebrow mb-2 block">What drives them, concerns, decision patterns</span>
+                  <textarea
+                    value={persona.notes}
+                    onChange={(e) =>
+                      dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'notes', value: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-metal text-sm focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed"
+                    placeholder="What they care about, fear, how they decide, what builds trust or friction..."
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <span className="eyebrow mb-2 block">What drives them, concerns, decision patterns</span>
-              <textarea
-                value={persona.notes}
-                onChange={(e) =>
-                  dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: persona.id, field: 'notes', value: e.target.value })
-                }
-                rows={3}
-                className="w-full bg-piloteer-surface-2 border border-piloteer-hair rounded-lg px-3 py-2 text-piloteer-metal text-sm focus:border-piloteer-focus focus:outline-none transition-colors leading-relaxed"
-                placeholder="What they care about, fear, how they decide, what builds trust or friction..."
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button onClick={handleAddPersona} className="btn-secondary w-full">
@@ -1542,7 +1604,7 @@ function ProductKeySignalsStep({
   setSubStep: (step: 'questions' | 'objectives' | 'differentiators' | 'objections') => void;
 }) {
   const subSteps = [
-    { id: 'questions' as const, label: 'Key Signals', completed: product.keyQuestions.length > 0 },
+    { id: 'questions' as const, label: 'Key Questions', completed: product.keyQuestions.length > 0 },
     { id: 'objectives' as const, label: 'Key Objectives', completed: product.keyObjectives.length > 0 },
     { id: 'differentiators' as const, label: 'Differentiators', completed: product.differentiators.length > 0 },
     { id: 'objections' as const, label: 'Objections & Counters', completed: product.objections.length > 0 },
@@ -2037,10 +2099,13 @@ function ProductCompetitiveStep({
                     type="text"
                     value={adv.ourAdvantage}
                     onChange={(e) => {
-                      // Simplified: directly update in state (could add proper action)
-                      const updated = { ...adv, ourAdvantage: e.target.value };
-                      dispatch({ type: 'REMOVE_COMPARISON_ADVANTAGE', productId: product.id, advId: adv.id });
-                      dispatch({ type: 'ADD_COMPARISON_ADVANTAGE', productId: product.id, advantage: updated });
+                      dispatch({ 
+                        type: 'UPDATE_COMPARISON_ADVANTAGE', 
+                        productId: product.id, 
+                        advId: adv.id, 
+                        field: 'ourAdvantage', 
+                        value: e.target.value 
+                      });
                     }}
                     className="flex-1 bg-piloteer-surface-3 border border-piloteer-hair rounded px-2 py-1.5 text-sm text-piloteer-ink focus:border-piloteer-focus focus:outline-none"
                     placeholder="Our advantage"
@@ -2049,9 +2114,13 @@ function ProductCompetitiveStep({
                   <select
                     value={adv.competitorName}
                     onChange={(e) => {
-                      const updated = { ...adv, competitorName: e.target.value };
-                      dispatch({ type: 'REMOVE_COMPARISON_ADVANTAGE', productId: product.id, advId: adv.id });
-                      dispatch({ type: 'ADD_COMPARISON_ADVANTAGE', productId: product.id, advantage: updated });
+                      dispatch({ 
+                        type: 'UPDATE_COMPARISON_ADVANTAGE', 
+                        productId: product.id, 
+                        advId: adv.id, 
+                        field: 'competitorName', 
+                        value: e.target.value 
+                      });
                     }}
                     className="bg-piloteer-surface-3 border border-piloteer-hair rounded px-2 py-1.5 text-sm text-piloteer-metal focus:border-piloteer-focus focus:outline-none"
                   >
@@ -2322,7 +2391,13 @@ function VisibilityGoLiveStep({
       p.description.length > 20 &&
       p.personas.length > 0 &&
       p.keyQuestions.length > 0 &&
-      p.competitors.length > 0
+      p.competitors.length > 0 &&
+      // Use completedSections for accurate completion tracking
+      p.completedSections.about &&
+      p.completedSections.personas &&
+      p.completedSections.keySignals &&
+      p.completedSections.competitive &&
+      p.completedSections.marketInfo
   );
 
   const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;

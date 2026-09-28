@@ -153,22 +153,22 @@ function createHunterProduct(): ProductTeach {
       {
         id: 'ca1',
         ourAdvantage: 'Real-time guidance during calls, not post-call analysis',
-        competitorName: 'Gong, Chorus',
+        competitorName: 'Gong',
       },
       {
         id: 'ca2',
         ourAdvantage: 'Private seller tips with no-monitor commitment',
-        competitorName: 'All competitors',
+        competitorName: 'Gong',
       },
       {
         id: 'ca3',
         ourAdvantage: 'Built on behavioral science, not just NLP transcription',
-        competitorName: 'All competitors',
+        competitorName: 'Chorus (Zoominfo)',
       },
       {
         id: 'ca4',
         ourAdvantage: 'Complements existing tools (Gong, Einstein) rather than replacing',
-        competitorName: 'N/A',
+        competitorName: 'Salesforce Einstein',
       },
     ],
     buyerEnvironment: [
@@ -335,17 +335,17 @@ function createCommanderProduct(): ProductTeach {
       {
         id: 'ca1',
         ourAdvantage: 'Pattern intelligence connecting behaviors to outcomes, not just activity tracking',
-        competitorName: 'Clari, Salesforce',
+        competitorName: 'Clari',
       },
       {
         id: 'ca2',
         ourAdvantage: 'Prescriptive guidance on where to intervene, not just descriptive dashboards',
-        competitorName: 'All competitors',
+        competitorName: 'Salesforce Reports & Dashboards',
       },
       {
         id: 'ca3',
         ourAdvantage: 'Built for front-line leaders making decisions, not executive reporting',
-        competitorName: 'Clari, Tableau',
+        competitorName: 'Tableau / Looker',
       },
     ],
     buyerEnvironment: [
