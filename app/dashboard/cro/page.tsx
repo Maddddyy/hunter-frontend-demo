@@ -227,7 +227,8 @@ export default function CRODashboard() {
                     What's working
                   </div>
                   <p className="text-sm">
-                    Asking "What concerns do you have?" early in discovery increases buyer-specific objection sharing by 3.2x. Validated across 24 interactions. Currently used by 3 of 8 enterprise reps.
+                    <span className="text-xs font-mono text-piloteer-verified mr-1">[Supported]</span>
+                    Permission-based questioning across 24 interactions. TechCorp surfaced security concern in first call (typically week 3). Eight of nine recent deals where used: buyer shared unscripted concern. Currently used by 3 of 8 enterprise reps.
                   </p>
                 </div>
 

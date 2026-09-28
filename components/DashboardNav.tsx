@@ -29,18 +29,18 @@ export default function DashboardNav({ children }: { children: React.ReactNode }
     if (pathname === '/dashboard') {
       return [
         { q: "Why is TechCorp momentum gaining?", a: "Security review completed ahead of schedule. Champion (Sarah Chen) mentioned board timeline pressure twice — external urgency creating decision momentum. Implementation concerns shifted from technical feasibility to organizational change management, indicating progression." },
-        { q: "What should I do about the Acme deal?", a: "EU data residency blocker has been unresolved for three weeks. Escalate to Product team for EU solution. Coach rep on responding to deployment questions with rollout examples instead of feature explanations." },
-        { q: "How is my permission-based questioning performing?", a: "Validated across 24 interactions. Buyer sharing increased when used (supported by interaction evidence). Continue applying in discovery phase. Three team members now adopting this pattern." }
+        { q: "What's the pattern across my book?", a: "Permission-based questioning in discovery: Supported across 24 interactions. TechCorp surfaced security concern in first call (typically surfaces week 3). Eight of nine recent deals where used: buyer shared unscripted concern proactively." },
+        { q: "How do I improve Acme Europe's momentum?", a: "Momentum losing (-12). EU data residency blocker unresolved for three weeks. Escalate to Product team for EU solution. Rep responding to deployment questions with features instead of rollout examples — coach on this pattern." }
       ];
     } else if (pathname?.startsWith('/dashboard/deals')) {
       return [
-        { q: "How do I move TechCorp forward?", a: "Security sign-off is confirmed. Next step: board presentation. Sarah Chen's timeline pressure is the key catalyst. Get written confirmation of security approval, then schedule executive presentation within their board cycle." },
-        { q: "What's the pattern across my stalled deals?", a: "Implementation concerns appearing in 60% of discovery calls. Buyers ask 'how does this work' and reps respond with product features instead of deployment stories. Early signal — still gathering evidence across more interactions." }
+        { q: "How do I move TechCorp forward?", a: "Security sign-off confirmed. Next: board presentation. Sarah Chen's timeline pressure is the key catalyst. Get written confirmation of security approval, then schedule executive presentation within their board cycle." },
+        { q: "What's stalling in my pipeline?", a: "Acme Europe: EU data residency blocker (three weeks). Midway Healthcare: timeline slipping, no new stakeholders in three weeks. Both show declining champion engagement — early signal that blocker resolution is prerequisite to momentum recovery." }
       ];
     } else if (pathname?.startsWith('/dashboard/manager')) {
       return [
-        { q: "Where should I intervene on the Acme deal?", a: "Rep is responding to deployment questions with features. Coach on converting to rollout examples. The EU data residency blocker needs Product escalation — it's recurring across 3 enterprise deals." },
-        { q: "What patterns are spreading across the team?", a: "Permission-based discovery: 3 of 5 reps now using consistently. Early IT involvement: Security conversations resolving 3 weeks faster. Implementation question handling: 2 reps still need coaching on deployment examples vs features." }
+        { q: "Where should I intervene first?", a: "TechCorp progressing well — security review completed. Acme stalled: EU data residency blocker needs Product escalation (recurring across 3 enterprise deals). Rep converting deployment questions to features instead of rollout stories — coach this." },
+        { q: "What patterns are spreading across the team?", a: "Permission-based discovery: 3 of 5 reps now using consistently (TechCorp and Globex both progressing with this). Early IT involvement: Security conversations resolving faster. Implementation question handling: 2 reps still need coaching on deployment examples vs features." }
       ];
     }
     return [

@@ -36,12 +36,11 @@ This is a complete, clickable mock-data demo covering the full Hunter experience
 **Piloteer** (our company) selling **Hunter** (our product) into **TechCorp Global** (fictional enterprise buyer).
 
 - Primary deal: TechCorp Global at technical validation stage
-- Buying committee: VP RevOps (champion), CRO, Director Sales Enablement, IT Security Lead
-- Implementation concerns shifting from technical feasibility → organizational change management
-- Security review completed; moving toward executive presentation
+- Buying committee: Sarah Chen (VP RevOps, champion), James Park (CRO), David Kim (IT Security Lead), Maria Rodriguez (Director Sales Enablement)
+- Implementation thread: Security review completed → board timeline pressure → organizational change management concerns
 - Momentum: +32 (Gaining)
 
-Secondary deals: Acme Europe, Globex, Midway Healthcare for dashboard context.
+Secondary book: Acme Europe, Globex, Midway Healthcare (Emma's other deals for dashboard context).
 
 ## Architecture
 
@@ -323,20 +322,25 @@ Manager/CRO dashboards focus on patterns and system performance, not individual 
 **TechCorp Deal (Primary):**
 - $180K, Technical Validation stage
 - Momentum +32 (Gaining, +18 last week)
-- Security review completed
+- Security review completed ahead of schedule
 - Champion (Sarah Chen) mentions board timeline pressure
 - Implementation concerns shifting to change management (progression signal)
 
+**Secondary Book:**
+- Acme Europe: $95K, Proposal, Momentum -12 (EU data residency blocker)
+- Globex: $120K, Proposal, Momentum +8 (holding steady)
+- Midway Healthcare: $78K, Discovery, Momentum -28 (timeline slipping)
+
 **Patterns:**
-- Seller: Permission-based questioning (validated, 24 interactions, 3.2x buyer sharing)
-- Buyer: Early IT involvement resolves security faster (validated, 18 interactions)
+- Seller: Permission-based questioning (supported, 24 interactions) — TechCorp surfaced security concern in first call vs typical week 3
+- Buyer: Early IT involvement resolves security faster (supported, 18 interactions)
 - Buyer×Seller: Acknowledgment > Defensiveness opens buyer sharing (supported, 15 interactions)
 - Market: AI fatigue / tool sprawl (validated, 60% of discovery calls, 12 interactions)
 
 **Needs You Queue:**
-1. TechCorp follow-through awaiting approval
-2. Acme prep needed (momentum losing, EU data residency blocker)
-3. Midway missing context (competitive intelligence)
+1. TechCorp follow-through: Security approval confirmed, ready for board presentation
+2. Acme Europe: EU data residency blocker unresolved (momentum losing, needs Product escalation)
+3. Midway Healthcare: Timeline slipping, no new stakeholders in three weeks
 
 ## Out of Scope (Frontend Demo Only)
 
