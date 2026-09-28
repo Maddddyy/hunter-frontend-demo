@@ -5,8 +5,8 @@ Production-quality Next.js frontend demo for **Piloteer Hunter** — a Sales Per
 ## Overview
 
 This is a complete, clickable mock-data demo covering the full Hunter experience:
-- **Teach Hunter** journey (progressive onboarding)
-- **Console** (prep sensing, live sensing with Pattern→Meaning→Move tips, follow-through)
+- **Teach Hunter** journey (progressive revenue-leader onboarding — own journey chrome, not wrapped in app shell)
+- **Console** (standalone floating companion ~400px — prep sensing, live sensing with Pattern→Meaning→Move tips, follow-through)
 - **Seller Performance Dashboard** (momentum, patterns, needs you queue)
 - **Manager Dashboard** (team-level intelligence and intervention)
 - **CRO Dashboard** (org-level revenue intelligence and systemic actions)
@@ -283,7 +283,10 @@ Place shared components in `components/`. Use existing patterns (MomentumDisplay
 ## Design Decisions
 
 ### Why one Console for all users?
-Per Dan's Console feedback: "Managers and revenue leaders do not need separate Console experiences—their differences belong in the dashboards."
+Per Dan's Console feedback: "Managers and revenue leaders do not need separate Console experiences—their differences belong in the dashboards." Console is a compact floating companion (~400px right side) that runs beside whatever you're selling in.
+
+### Why Console not in dashboard nav?
+Console is the live operational surface for preparation and sensing. It's not a dashboard section. The Piloteer Logo in the Console menu bar opens dashboards. Managers/leaders get their "Needs You" and patterns on dashboards, not by watching seller consoles.
 
 ### Why no drag-to-change-stage in deals board?
 From Vision/Blueprint: Deals board should not allow manual stage changes. Stages reflect CRM state; momentum is Hunter's interpretation.
