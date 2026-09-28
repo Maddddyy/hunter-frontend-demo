@@ -2217,12 +2217,9 @@ function ProductMarketInfoStep({
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {signals.map((signal) => (
-              <div
-                key={signal.id}
-                className="card bg-gradient-to-br from-piloteer-surface to-piloteer-black border-piloteer-hair-2"
-              >
+              <div key={signal.id} className="card bg-piloteer-black border-piloteer-hair-2">
                 <div className="flex items-start gap-4">
                   <textarea
                     value={signal.signal}
@@ -2241,7 +2238,7 @@ function ProductMarketInfoStep({
                       dispatch({ type: 'REMOVE_MARKET_SIGNAL', productId: product.id, category, signalId: signal.id });
                       showToast('Signal removed');
                     }}
-                    className="text-piloteer-signal hover:text-piloteer-ink transition-colors mt-1"
+                    className="text-piloteer-signal hover:text-piloteer-ink transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
