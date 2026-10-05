@@ -19,16 +19,16 @@ export const personas: Record<PersonaId, Persona> = {
     name: 'Daniel Okonkwo',
     title: 'Revenue leader',
     email: 'daniel@piloteer.ai',
-    home: '/dashboard/cro',
-    summary: 'Teach Hunter, invite the team, and read company performance.',
+    home: '/dashboard',
+    summary: 'Teach Hunter, then your book, your deals, the team, and the company.',
   },
   manager: {
     id: 'manager',
     name: 'Priya Shah',
     title: 'Sales manager',
     email: 'priya@piloteer.ai',
-    home: '/dashboard/manager',
-    summary: 'Team performance. The company model stays with the revenue leader.',
+    home: '/dashboard',
+    summary: 'Your book, your deals, and the team. The company model stays with the revenue leader.',
   },
   rep: {
     id: 'rep',
@@ -86,26 +86,6 @@ export function usePersona() {
 
 export function allows(id: PersonaId, pathname: string) {
   if (pathname === '/' || pathname.startsWith('/console')) return true;
-
-  if (id === 'rep') {
-    if (pathname.startsWith('/settings/teach')) return false;
-    if (pathname.startsWith('/dashboard/manager') || pathname.startsWith('/dashboard/cro')) return false;
-    return pathname === '/dashboard' || pathname.startsWith('/dashboard/deals') || pathname.startsWith('/settings');
-  }
-
-  if (id === 'manager') {
-    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/cro') || pathname.startsWith('/settings/teach')) {
-      return false;
-    }
-    return pathname.startsWith('/dashboard/') || pathname.startsWith('/settings');
-  }
-
-  if (
-    pathname === '/dashboard' ||
-    pathname.startsWith('/dashboard/deals') ||
-    pathname.startsWith('/dashboard/manager')
-  ) {
-    return false;
-  }
-  return pathname.startsWith('/dashboard/cro') || pathname.startsWith('/settings');
+  if (pathname.startsWith('/settings/teach') || pathname.startsWith('/dashboard/cro')) return id === 'leader';
+  return pathname === '/dashboard' || pathname.startsWith('/dashboard/') || pathname.startsWith('/settings');
 }

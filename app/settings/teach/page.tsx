@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useReducer, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import DashboardNav from '@/components/DashboardNav';
+import { markTeachComplete } from '@/lib/teachGate';
 import {
   TeachState,
   TeachStepId,
@@ -51,6 +52,7 @@ type TeachAction =
   | { type: 'UPDATE_KEY_QUESTION'; productId: string; index: number; value: string }
   | { type: 'REMOVE_KEY_QUESTION'; productId: string; index: number }
   | { type: 'ADD_KEY_OBJECTIVE'; productId: string; objective: string }
+  | { type: 'UPDATE_KEY_OBJECTIVE'; productId: string; index: number; value: string }
   | { type: 'REMOVE_KEY_OBJECTIVE'; productId: string; index: number }
   | { type: 'ADD_DIFFERENTIATOR'; productId: string; differentiator: Differentiator }
   | { type: 'UPDATE_DIFFERENTIATOR'; productId: string; diffId: string; field: string; value: string }
@@ -309,6 +311,21 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
             : p
         ),
       };
+
+    case 'UPDATE_KEY_OBJECTIVE':
+      return {
+        ...state,
+        products: state.products.map(p =>
+          p.id === action.productId
+            ? {
+                ...p,
+                keyObjectives: p.keyObjectives.map((objective, index) =>
+                  index === action.index ? action.value : objective
+                ),
+              }
+            : p
+        ),
+      };
     
     case 'REMOVE_KEY_OBJECTIVE':
       return {
@@ -493,8 +510,30 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
         ...product,
         description: product.description.trim() || `${name} helps the buyer finish the job they cannot finish with the tools they already have.`,
         personas: product.personas.length > 0 ? product.personas : [
-          { id: `p-${product.id}-1`, name: 'Economic buyer', role: 'Owns the budget', notes: `Asks what changes if the team adopts ${name}.` },
-          { id: `p-${product.id}-2`, name: 'Champion', role: 'Runs the process', notes: `Needs ${name} to fit the way the team already sells.` },
+          {
+            id: `p-${product.id}-1`,
+            name: 'Economic buyer',
+            role: 'Owns the budget',
+            notes: '',
+            titles: 'CRO, VP Sales, CFO, Revenue leader',
+            owns: 'Revenue, budget, team performance',
+            accomplish: `Hit the outcome ${name} is bought for`,
+            matters: 'Clear ROI, low risk, and proof it works',
+            hesitate: 'Cost, implementation risk, and a lack of proof',
+            signals: `Asks what changes if the team adopts ${name}.`,
+          },
+          {
+            id: `p-${product.id}-2`,
+            name: 'Champion',
+            role: 'Runs the process',
+            notes: '',
+            titles: 'Director, senior manager, project lead',
+            owns: 'The process and the people who have to use it',
+            accomplish: `Get ${name} adopted without stalling the quarter`,
+            matters: 'That it fits the way the team already sells',
+            hesitate: 'A rollout that creates more work for the team',
+            signals: 'Brings in stakeholders and pushes on timing',
+          },
         ],
         keyQuestions: product.keyQuestions.length > 0 ? product.keyQuestions : [
           `Where does the current approach fail before ${name} shows up?`,
@@ -510,7 +549,16 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
           { id: `o-${product.id}-1`, objection: 'We already have something for this.', counter: `${name} sits on top of that system and makes it actionable.` },
         ],
         competitors: product.competitors.length > 0 ? product.competitors : [
-          { id: `c-${product.id}-1`, name: 'The incumbent', profile: 'The tool the buyer already pays for and rarely replaces outright.' },
+          {
+            id: `c-${product.id}-1`,
+            name: 'The incumbent',
+            profile: '',
+            whyChoose: 'The tool the buyer already pays for and rarely replaces outright.',
+            fallShort: 'It records what happened. It does not tell the rep what to do next.',
+            emphasize: `${name} sits on top of that system and makes the next move obvious.`,
+            objection: 'We already have something for this.',
+            response: `${name} does not replace the system of record. It makes it actionable on the call.`,
+          },
         ],
         buyerEnvironment: product.buyerEnvironment.length > 0 ? product.buyerEnvironment : [
           { id: `be-${product.id}-1`, signal: 'The buyer describes the job in their own words before you name the product.' },
@@ -652,9 +700,13 @@ function teachReducer(state: TeachState, action: TeachAction): TeachState {
 }
 
 export default function TeachPage() {
+  const router = useRouter();
   const [state, dispatch] = useReducer(teachReducer, initialTeachState);
   const [toast, setToast] = useState<string | null>(null);
   const [keySignalsSubStep, setKeySignalsSubStep] = useState<'questions' | 'objectives' | 'differentiators' | 'objections'>('questions');
+  const [launch, setLaunch] = useState<'edit' | 'configuring' | 'success' | 'team' | 'console'>('edit');
+  const [samplePreview, setSamplePreview] = useState(false);
+  const [showGaps, setShowGaps] = useState(false);
 
   useEffect(() => {
     setKeySignalsSubStep('questions');
@@ -665,280 +717,219 @@ export default function TeachPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const steps: { id: TeachStepId; title: string; group: string; productId?: string; sample?: boolean }[] = [
-    { id: 'company-overview', title: 'Company', group: 'Organization' },
-    { id: 'products', title: 'Products', group: 'Organization' },
-    { id: 'deal-stages', title: 'Deal Stages', group: 'Organization' },
-    { id: 'sales-framework', title: 'Sales Framework', group: 'Organization' },
-    ...state.products.filter((product) => product.name.trim()).flatMap((product) => [
-      { id: 'product-about' as TeachStepId, title: 'About', group: product.name, productId: product.id, sample: product.sample },
-      { id: 'product-personas' as TeachStepId, title: 'Personas', group: product.name, productId: product.id, sample: product.sample },
-      { id: 'product-key-signals' as TeachStepId, title: 'Key Signals', group: product.name, productId: product.id, sample: product.sample },
-      { id: 'product-competitive' as TeachStepId, title: 'Competitive', group: product.name, productId: product.id, sample: product.sample },
-      { id: 'product-market-info' as TeachStepId, title: 'Market Info', group: product.name, productId: product.id, sample: product.sample },
-    ]),
-    { id: 'gaps-contradictions', title: 'Gaps', group: 'Finalize' },
-    { id: 'visibility-go-live', title: 'Go Live', group: 'Finalize' },
+  type AskScreen = 'industry' | 'segment' | 'deal-size' | 'cycle' | 'website' | 'stages' | 'framework' | 'names' | 'sources' | 'buyers' | 'playbook' | 'competitors' | 'market' | 'ready';
+  type Ask = { id: string; chapter: 'company' | 'sell' | 'ready'; prompt: string; rail: string; detail?: string; required: boolean; screen: AskScreen; productId?: string };
+
+  const userProducts = state.products.filter((product) => !product.sample);
+  const namedProducts = userProducts.filter((product) => product.name.trim());
+  const asks: Ask[] = [
+    { id: 'industry', chapter: 'company', prompt: 'What industry are you in?', rail: 'Industry', required: true, screen: 'industry' },
+    { id: 'segment', chapter: 'company', prompt: 'Who do you primarily sell to?', rail: 'Who you sell to', required: true, screen: 'segment' },
+    { id: 'deal-size', chapter: 'company', prompt: 'What is your typical deal size?', rail: 'Deal size', required: false, screen: 'deal-size' },
+    { id: 'cycle', chapter: 'company', prompt: 'How long is a typical sales cycle?', rail: 'Sales cycle', required: false, screen: 'cycle' },
+    { id: 'website', chapter: 'company', prompt: 'Where should Hunter read about the company?', rail: 'Website', required: false, screen: 'website' },
+    { id: 'stages', chapter: 'company', prompt: 'How does a deal move?', rail: 'Deal stages', required: false, screen: 'stages' },
+    { id: 'framework', chapter: 'company', prompt: 'What motion do your reps already run?', rail: 'Sales motion', required: false, screen: 'framework' },
+    { id: 'names', chapter: 'sell', prompt: 'Products & Services', rail: 'Products & Services', detail: 'Name what you sell. Hunter learns each one.', required: true, screen: 'names' },
+    ...namedProducts.flatMap((product) => ([
+      { id: `sources-${product.id}`, chapter: 'sell' as const, prompt: `What should Hunter know about ${product.name}?`, rail: 'About', required: false, screen: 'sources' as const, productId: product.id },
+      { id: `buyers-${product.id}`, chapter: 'sell' as const, prompt: 'Buyer personas', rail: 'Buyer personas', detail: 'Teach Hunter who you sell to, what matters to them, and how they decide.', required: false, screen: 'buyers' as const, productId: product.id },
+      { id: `playbook-${product.id}`, chapter: 'sell' as const, prompt: 'Sales Playbook', rail: 'Sales playbook', detail: 'Define the questions, objections, differentiators, and responses Hunter should recognize live.', required: false, screen: 'playbook' as const, productId: product.id },
+      { id: `competitors-${product.id}`, chapter: 'sell' as const, prompt: `Who do you sell ${product.name} against?`, rail: 'Competitors', required: false, screen: 'competitors' as const, productId: product.id },
+      { id: `market-${product.id}`, chapter: 'sell' as const, prompt: `What is changing around ${product.name} deals?`, rail: 'Market', required: false, screen: 'market' as const, productId: product.id },
+    ])),
+    { id: 'ready', chapter: 'ready', prompt: 'Ready to launch Hunter', rail: 'Go live', required: true, screen: 'ready' },
   ];
 
-  const totalSteps = steps.length;
-  const stepIndex = Math.min(state.currentStep, Math.max(0, totalSteps - 1));
-  const currentStepData = steps[stepIndex];
-  const currentProduct = currentStepData.productId
-    ? state.products.find((product) => product.id === currentStepData.productId)
-    : state.products[state.activeProductIndex];
+  const askIndex = Math.min(state.currentStep, Math.max(0, asks.length - 1));
+  const ask = asks[askIndex];
+  const currentProduct = ask.productId
+    ? state.products.find((product) => product.id === ask.productId)
+    : undefined;
+  const sampleProduct = state.products.find((product) => product.sample);
 
   useEffect(() => {
-    if (state.currentStep > totalSteps - 1) {
-      dispatch({ type: 'SET_STEP', step: Math.max(0, totalSteps - 1), productIndex: 0 });
+    if (state.currentStep > asks.length - 1) {
+      dispatch({ type: 'SET_STEP', step: Math.max(0, asks.length - 1) });
     }
-  }, [state.currentStep, totalSteps]);
+  }, [state.currentStep, asks.length]);
 
-  const canContinue = () => {
-    const company = state.companyOverview;
-    switch (currentStepData.id) {
-      case 'company-overview':
-        return Boolean(
-          company.industry &&
-          company.customerSegment.length > 0 &&
-          company.typicalDealSize &&
-          company.typicalSalesCycle &&
-          company.website.trim() &&
-          company.contacts.some((contact) => contact.name.trim())
-        );
-      case 'products':
-        return userProducts.length > 0 && userProducts.every((product) => product.name.trim().length > 0);
-      case 'deal-stages':
-        return state.dealStages.length >= 3;
-      case 'sales-framework':
-        return state.salesFramework !== null;
-      case 'product-about':
-        return Boolean(currentProduct && currentProduct.description.trim().length > 20);
-      default:
-        return true;
-    }
-  };
+  const chapterLabel = { company: 'Your company', sell: 'What you sell', ready: 'Finalize' } as const;
+  const chapterAsks = asks.filter((item) => item.chapter === ask.chapter);
+  const chapterPos = chapterAsks.findIndex((item) => item.id === ask.id) + 1;
 
-  // Calculate go-live readiness
-  const allProductsComplete = state.products.every(
-    (p) =>
-      p.completedSections.about &&
-      p.completedSections.personas &&
-      p.completedSections.keySignals &&
-      p.completedSections.competitive &&
-      p.completedSections.marketInfo
-  );
-  const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;
-  const canGoLive = state.visibility.sensing && allProductsComplete && unresolvedContradictions === 0;
-
-  const company = state.companyOverview;
-  const companyReady = Boolean(
-    company.industry &&
-    company.customerSegment.length > 0 &&
-    company.typicalDealSize &&
-    company.typicalSalesCycle &&
-    company.website.trim() &&
-    company.contacts.some((contact) => contact.name.trim())
-  );
-  const userProducts = state.products.filter((product) => !product.sample);
-  const productsReady = userProducts.length > 0 && userProducts.every((product) => product.name.trim().length > 0);
-  const stagesReady = state.dealStages.length >= 3;
-  const frameworkReady = state.salesFramework !== null;
-
-  const stepUnlocked = (index: number) => {
-    const id = steps[index]?.id;
-    if (!id) return false;
-    if (steps[index]?.sample) return true;
-    if (id === 'company-overview') return true;
-    if (!companyReady) return false;
-    if (id === 'products') return true;
-    if (!productsReady) return false;
-    if (id === 'deal-stages') return true;
-    if (!stagesReady) return false;
-    if (id === 'sales-framework') return true;
-    if (!frameworkReady) return false;
+  const requirementMet = (item: Ask) => {
+    if (item.screen === 'industry') return Boolean(state.companyOverview.industry);
+    if (item.screen === 'segment') return state.companyOverview.customerSegment.length > 0;
+    if (item.screen === 'names') return namedProducts.length > 0 && userProducts.every((product) => product.name.trim().length > 0);
     return true;
   };
 
-  const goTo = (step: number) => {
-    if (!stepUnlocked(step)) return;
-    const target = steps[step];
+  const canAdvance = () => !ask.required || requirementMet(ask);
+  const canOpen = (index: number) => asks.slice(0, index).every((item) => !item.required || requirementMet(item));
+
+  const goTo = (index: number) => {
+    const target = asks[index];
     const found = target?.productId
       ? state.products.findIndex((product) => product.id === target.productId)
-      : state.activeProductIndex;
-    dispatch({ type: 'SET_STEP', step, productIndex: found >= 0 ? found : 0 });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      : 0;
+    setSamplePreview(false);
+    setShowGaps(false);
+    dispatch({ type: 'SET_STEP', step: index, productIndex: found >= 0 ? found : 0 });
   };
 
-  const inSample = Boolean(steps[stepIndex]?.sample);
-
-  const nextStepIndex = () => {
-    for (let index = stepIndex + 1; index < totalSteps; index += 1) {
-      const step = steps[index];
-      if (inSample) return step.sample ? index : -1;
-      if (step.sample) continue;
-      return stepUnlocked(index) ? index : -1;
-    }
-    return -1;
-  };
-
-  const handleNext = () => {
-    const index = nextStepIndex();
+  const openAsk = (id: string) => {
+    const index = asks.findIndex((item) => item.id === id);
     if (index >= 0) goTo(index);
   };
 
-  const handleBack = () => {
-    for (let index = stepIndex - 1; index >= 0; index -= 1) {
-      const step = steps[index];
-      if (inSample) {
-        if (step.sample || stepUnlocked(index)) {
-          goTo(index);
-          return;
-        }
-      } else if (!step.sample && stepUnlocked(index)) {
-        goTo(index);
-        return;
-      }
-    }
-  };
+  useEffect(() => {
+    if (launch !== 'configuring') return;
+    const timer = window.setTimeout(() => setLaunch('success'), 4200);
+    return () => window.clearTimeout(timer);
+  }, [launch]);
 
-  // Group steps for left rail
-  const groupedSteps = steps.reduce((acc, step, idx) => {
-    if (!acc[step.group]) acc[step.group] = [];
-    acc[step.group].push({ ...step, index: idx });
-    return acc;
-  }, {} as Record<string, Array<typeof steps[0] & { index: number }>>);
+  const headerNote = showGaps
+    ? null
+    : ask.detail || (!ask.required ? 'Optional. Skip it if it does not apply yet.' : null);
 
   return (
     <DashboardNav>
-    <div className="min-h-full bg-piloteer-void text-piloteer-ink flex">
-      <aside className="hidden lg:flex w-[220px] shrink-0 border-r border-piloteer-hair px-4 py-6 flex-col sticky top-0 h-[calc(100dvh-3.5rem)]">
-        <Link href="/settings" className="mb-6 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink transition-colors">
-          Settings
-        </Link>
-        <p className="px-2 mb-6 text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-mute">Teach Hunter</p>
-        <nav className="flex-1 overflow-y-auto space-y-7 pr-1" aria-label="Teach steps">
-          {Object.entries(groupedSteps).map(([group, groupSteps]) => (
-            <div key={group}>
-              <p className="px-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-metal">
-                <span>{group}</span>
-                {groupSteps.some((step) => step.sample) && (
-                  <span className="rounded-full bg-piloteer-ink px-2 py-0.5 text-[11px] font-semibold normal-case tracking-normal text-piloteer-void">
-                    Sample
-                  </span>
-                )}
-              </p>
-              <div className="mt-2 space-y-0.5">
-                {groupSteps.map((step) => {
-                  const active = step.index === stepIndex;
-                  return (
-                    <button
-                      key={step.index}
-                      type="button"
-                      disabled={!stepUnlocked(step.index)}
-                      onClick={() => goTo(step.index)}
-                      className={`w-full text-left rounded-lg px-2 py-1.5 text-sm font-semibold leading-snug transition-colors disabled:cursor-not-allowed ${
-                        active ? 'bg-piloteer-surface text-piloteer-ink' : 'text-piloteer-metal hover:text-piloteer-ink'
-                      }`}
-                    >
-                      {step.title}
-                    </button>
-                  );
-                })}
+    <div className="flex h-full min-h-0 overflow-hidden bg-piloteer-void text-piloteer-ink">
+      {launch === 'edit' && (
+      <aside className="flex w-[220px] shrink-0 flex-col border-r border-piloteer-hair px-2.5 py-4">
+        <p className="px-2 text-sm font-semibold">Teach Hunter</p>
+        <p className="mt-1 px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-mute">
+          {String(askIndex + 1).padStart(2, '0')} / {String(asks.length).padStart(2, '0')}
+        </p>
+        <div className="mx-2 mt-2.5 h-1 overflow-hidden rounded-full bg-piloteer-surface">
+          <div className="h-full rounded-full bg-piloteer-signal" style={{ width: `${Math.max(8, ((askIndex + 1) / asks.length) * 100)}%` }} />
+        </div>
+        <nav className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1" aria-label="Teach journey">
+          {(['company', 'sell', 'ready'] as const).map((chapter) => {
+            const items = asks.map((item, index) => ({ item, index })).filter(({ item }) => item.chapter === chapter);
+            if (items.length === 0) return null;
+            return (
+              <div key={chapter}>
+                <p className="px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-mute">{chapterLabel[chapter]}</p>
+                <div className="mt-1 space-y-0.5">
+                  {items.map(({ item, index }, position) => {
+                    const active = index === askIndex && !showGaps;
+                    const done = index < askIndex;
+                    const open = canOpen(index);
+                    const product = item.productId ? state.products.find((entry) => entry.id === item.productId) : undefined;
+                    const previous = items[position - 1]?.item;
+                    const showProduct = Boolean(product && previous?.productId !== item.productId);
+                    return (
+                      <div key={item.id}>
+                        {showProduct && <p className="px-2 pb-0.5 pt-2 text-xs font-semibold">{product?.name}</p>}
+                        <button
+                          type="button"
+                          disabled={!open && !active}
+                          onClick={() => open && goTo(index)}
+                          aria-current={active ? 'step' : undefined}
+                          className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] ${
+                            active
+                              ? 'bg-piloteer-surface font-semibold text-piloteer-ink shadow-[inset_2px_0_0_#FF5C5C]'
+                              : done
+                                ? 'font-semibold text-piloteer-metal hover:bg-piloteer-surface-2 hover:text-piloteer-ink'
+                                : 'text-piloteer-mute hover:bg-piloteer-surface-2 hover:text-piloteer-ink'
+                          } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
+                        >
+                          <span className={`w-6 shrink-0 font-mono text-[11px] ${active ? 'text-piloteer-signal' : done ? 'text-piloteer-metal' : 'text-piloteer-mute'}`}>
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span className="min-w-0 truncate">{item.rail}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
       </aside>
+      )}
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-8 pb-16 min-h-full flex flex-col">
-          <label className="lg:hidden mb-6 block">
-            <span className="eyebrow mb-2 block">Step</span>
-            <select
-              value={stepIndex}
-              onChange={(event) => goTo(Number(event.target.value))}
-              className="w-full rounded-xl border border-piloteer-hair bg-piloteer-surface px-3 py-2 text-sm"
-            >
-              {steps.map((step, index) => (
-                <option key={`${step.id}-${index}`} value={index} disabled={!stepUnlocked(index)}>
-                  {step.group} · {step.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex items-baseline justify-between mb-12">
-            <div>
-              <p className="flex items-center gap-3 text-sm font-semibold text-piloteer-metal">
-                <span>{currentStepData.group}</span>
-                {currentStepData.sample && (
-                  <span className="rounded-full bg-piloteer-ink px-2.5 py-0.5 text-xs font-semibold text-piloteer-void">Sample</span>
-                )}
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-6 pb-4 pt-4">
+        {launch === 'edit' && !samplePreview && ask.screen !== 'ready' && (
+          <div className="flex shrink-0 items-stretch gap-5 pb-3">
+            <div className="flex min-w-0 flex-1 flex-col justify-end">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-piloteer-signal">
+                {ask.productId ? currentProduct?.name : chapterLabel[ask.chapter]}
+                <span className="ml-3 tracking-[0.16em] text-piloteer-mute">{String(chapterPos).padStart(2, '0')} / {String(chapterAsks.length).padStart(2, '0')}</span>
               </p>
-              <h1 className="mt-2 text-5xl font-bold tracking-editorial leading-none">{currentStepData.title}</h1>
+              <h1 className="mt-1 text-[32px] font-bold leading-tight tracking-editorial">{showGaps ? 'Review gaps' : ask.prompt}</h1>
+              {headerNote ? <p className="mt-1.5 truncate text-sm text-piloteer-metal">{headerNote}</p> : null}
             </div>
-            <span className="font-mono text-xs tracking-[0.16em] text-piloteer-metal">
-              {String(stepIndex + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
-            </span>
+            <StepMark
+              index={askIndex}
+              total={asks.length}
+              label={ask.prompt}
+              marks={chapterAsks.map((item) => asks.findIndex((entry) => entry.id === item.id))}
+            />
           </div>
+        )}
 
-          <div className="flex-1">
-            {renderStepContent(
-              currentStepData.id,
-              state,
-              dispatch,
-              showToast,
-              keySignalsSubStep,
-              setKeySignalsSubStep,
-              currentProduct
-            )}
-          </div>
-
-          <div className="flex items-center justify-between mt-16">
-            <button
-              onClick={handleBack}
-              disabled={stepIndex === 0}
-              className="btn-ghost disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              Back
-            </button>
-
-            {stepIndex === totalSteps - 1 ? (
-              <div className="flex items-center gap-5">
-                {!canGoLive && (
-                  <span className="text-xs font-mono uppercase tracking-widest text-piloteer-signal">
-                    {!state.visibility.sensing && 'Enable sensing'}
-                    {state.visibility.sensing && !allProductsComplete && 'Complete all products'}
-                    {state.visibility.sensing && allProductsComplete && unresolvedContradictions > 0 && `Resolve ${unresolvedContradictions}`}
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    dispatch({ type: 'GO_LIVE' });
-                    showToast('Company model saved. Opening company performance...');
-                    setTimeout(() => window.location.href = '/dashboard/cro', 1200);
-                  }}
-                  disabled={!canGoLive}
-                  className="btn-primary py-3.5 px-7 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  Go live
-                </button>
+        <div className="relative min-h-0 flex-1">
+          <div className="absolute inset-0 grid grid-rows-1">
+            {launch !== 'edit' ? (
+              <LaunchSequence
+                percent={learningReport(state).percent}
+                phase={launch}
+                onPhase={setLaunch}
+                onEnter={() => {
+                  dispatch({ type: 'GO_LIVE' });
+                  markTeachComplete();
+                  router.push('/dashboard');
+                }}
+                onConsole={() => {
+                  dispatch({ type: 'GO_LIVE' });
+                  markTeachComplete();
+                  router.push('/console');
+                }}
+              />
+            ) : samplePreview && sampleProduct ? (
+              <div className="flex h-full min-h-0 flex-col">
+                <button type="button" onClick={() => setSamplePreview(false)} className="btn-ghost mb-2 self-start px-2 py-1">Back to your products</button>
+                <div className="min-h-0 flex-1">
+                  <ProductAboutStep product={sampleProduct} dispatch={dispatch} showToast={showToast} />
+                </div>
               </div>
+            ) : showGaps ? (
+              <GapsContradictionsStep state={state} dispatch={dispatch} showToast={showToast} gaps={teachGaps(state)} onFix={openAsk} />
             ) : (
-              <button
-                onClick={handleNext}
-                disabled={!canContinue() || nextStepIndex() < 0}
-                className="btn-primary py-3.5 px-7 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                Continue
-              </button>
+              renderStepContent(ask.screen, state, dispatch, showToast, keySignalsSubStep, setKeySignalsSubStep, currentProduct, () => setSamplePreview(true), () => setShowGaps(true), openAsk)
             )}
           </div>
         </div>
+
+        {launch === 'edit' && !samplePreview && (
+          <div className="mt-3 flex shrink-0 items-center justify-between border-t border-piloteer-hair pt-3">
+            <button type="button" onClick={() => (showGaps ? setShowGaps(false) : goTo(askIndex - 1))} disabled={!showGaps && askIndex === 0} className="btn-ghost disabled:opacity-20">
+              Back
+            </button>
+            {ask.screen === 'ready' && !showGaps ? (
+              <button type="button" onClick={() => setLaunch('configuring')} className="btn-primary">Submit for configuration</button>
+            ) : showGaps ? (
+              <button type="button" onClick={() => setShowGaps(false)} className="btn-primary">Back to readiness</button>
+            ) : (
+              <div className="flex items-center gap-2">
+                {!ask.required && (
+                  <button type="button" onClick={() => goTo(askIndex + 1)} className="btn-ghost">Skip</button>
+                )}
+                <button type="button" onClick={() => goTo(askIndex + 1)} disabled={!canAdvance()} className="btn-primary disabled:opacity-30">
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {toast && (
-        <div className="fixed bottom-8 right-8 bg-piloteer-ink text-piloteer-void px-5 py-3 rounded-full z-50">
+        <div className="fixed bottom-8 right-8 z-50 rounded-full bg-piloteer-ink px-5 py-3 text-piloteer-void">
           <span className="text-sm font-semibold">{toast}</span>
         </div>
       )}
@@ -948,264 +939,309 @@ export default function TeachPage() {
 }
 
 function renderStepContent(
-  stepId: TeachStepId,
+  screen: 'industry' | 'segment' | 'deal-size' | 'cycle' | 'website' | 'stages' | 'framework' | 'names' | 'sources' | 'buyers' | 'playbook' | 'competitors' | 'market' | 'ready',
   state: TeachState,
   dispatch: React.Dispatch<TeachAction>,
   showToast: (message: string) => void,
   keySignalsSubStep: 'questions' | 'objectives' | 'differentiators' | 'objections',
   setKeySignalsSubStep: (step: 'questions' | 'objectives' | 'differentiators' | 'objections') => void,
-  currentProduct: ProductTeach | undefined
+  currentProduct: ProductTeach | undefined,
+  onOpenSample: () => void,
+  onReviewGaps: () => void,
+  onOpenAsk: (id: string) => void
 ): React.ReactNode {
-  switch (stepId) {
-    case 'company-overview':
-      return <CompanyOverviewStep state={state} dispatch={dispatch} />;
-    case 'products':
-      return <ProductsStep state={state} dispatch={dispatch} />;
-    case 'deal-stages':
-      return <DealStagesStep state={state} dispatch={dispatch} showToast={showToast} />;
-    case 'sales-framework':
-      return <SalesFrameworkStep state={state} dispatch={dispatch} />;
-    case 'product-about':
-    case 'product-personas':
-    case 'product-key-signals':
-    case 'product-competitive':
-    case 'product-market-info':
-      if (!currentProduct) {
-        return <p className="text-base text-piloteer-metal">Name your products first.</p>;
-      }
-      if (stepId === 'product-about') {
-        return <ProductAboutStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
-      }
-      if (stepId === 'product-personas') {
-        return <ProductPersonasStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
-      }
-      if (stepId === 'product-key-signals') {
-        return (
-          <ProductKeySignalsStep
-            product={currentProduct}
-            dispatch={dispatch}
-            showToast={showToast}
-            subStep={keySignalsSubStep}
-            setSubStep={setKeySignalsSubStep}
-          />
-        );
-      }
-      if (stepId === 'product-competitive') {
-        return <ProductCompetitiveStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
-      }
-      return <ProductMarketInfoStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
-    case 'gaps-contradictions':
-      return <GapsContradictionsStep state={state} dispatch={dispatch} showToast={showToast} />;
-    case 'visibility-go-live':
-      return <VisibilityGoLiveStep state={state} dispatch={dispatch} showToast={showToast} />;
-    default:
-      return <div>Step not implemented</div>;
+  if (screen === 'industry' || screen === 'segment' || screen === 'deal-size' || screen === 'cycle' || screen === 'website') {
+    return <CompanyOverviewStep state={state} dispatch={dispatch} focus={screen} />;
   }
+  if (screen === 'stages') return <DealStagesStep state={state} dispatch={dispatch} showToast={showToast} />;
+  if (screen === 'framework') return <SalesFrameworkStep state={state} dispatch={dispatch} />;
+  if (screen === 'names') return <ProductsStep state={state} dispatch={dispatch} onOpenSample={onOpenSample} />;
+  if (screen === 'ready') return <VisibilityGoLiveStep state={state} onReviewGaps={onReviewGaps} onOpenAsk={onOpenAsk} />;
+  if (!currentProduct) return <p className="text-base text-piloteer-metal">Name your products first.</p>;
+  if (screen === 'sources') return <ProductAboutStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+  if (screen === 'buyers') return <ProductPersonasStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+  if (screen === 'playbook') {
+    return (
+      <ProductKeySignalsStep
+        product={currentProduct}
+        dispatch={dispatch}
+        showToast={showToast}
+        subStep={keySignalsSubStep}
+        setSubStep={setKeySignalsSubStep}
+      />
+    );
+  }
+  if (screen === 'competitors') return <ProductCompetitiveStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+  if (screen === 'market') return <ProductMarketInfoStep product={currentProduct} dispatch={dispatch} showToast={showToast} />;
+  return null;
 }
 
 // Step Components (each as a separate function component for clarity)
 
-function CompanyOverviewStep({ state, dispatch }: { state: TeachState; dispatch: React.Dispatch<TeachAction> }) {
-  const industries = [
-    'Software / SaaS',
-    'Financial Services',
-    'Healthcare',
-    'Manufacturing',
-    'Professional Services',
-    'Technology',
-    'Retail / E-commerce',
-    'Other',
-  ];
-
-  const segments: { value: CustomerSegment; label: string }[] = [
-    { value: 'smb', label: 'SMB' },
-    { value: 'mid-market', label: 'Mid-Market' },
-    { value: 'enterprise', label: 'Enterprise' },
-    { value: 'mixed', label: 'Mixed' },
-  ];
-
-  const dealSizes = ['<$25K', '$25K-$100K', '$100K-$500K', '$500K+'];
-  const salesCycles = ['<30 days', '30-90 days', '90-180 days', '180+ days'];
-
-  const choiceClass = (on: boolean) =>
-    `px-4 py-4 rounded-2xl text-left text-sm font-semibold transition-colors ${
-      on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
-    }`;
-
+function StepMark({
+  index,
+  total,
+  label,
+  marks,
+}: {
+  index: number;
+  total: number;
+  label: string;
+  marks: number[];
+}) {
+  const percent = Math.round(((index + 1) / total) * 100);
   return (
-    <div className="max-w-3xl space-y-10">
-      <section>
-        <h2 className="text-sm font-semibold">Industry</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {industries.map((industry) => {
-            const on = state.companyOverview.industry === industry;
+    <div className="relative flex h-[148px] w-[280px] shrink-0 flex-col overflow-hidden rounded-[24px] border border-piloteer-hair bg-[radial-gradient(80%_80%_at_100%_0%,rgba(255,92,92,0.28),transparent_55%),linear-gradient(180deg,#1a1216_0%,#111117_100%)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+      <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-piloteer-signal/40 blur-2xl" />
+      <div className="relative flex items-center justify-between">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-piloteer-mute">This step</p>
+        <p className="font-mono text-xs text-piloteer-metal">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
+      </div>
+      <div className="relative mt-1 flex items-end justify-between gap-3">
+        <p className="font-disp text-[68px] font-bold leading-[0.8] tracking-editorial">{String(index + 1).padStart(2, '0')}</p>
+        <div className="mb-1 flex max-w-[132px] flex-wrap justify-end gap-x-1.5 gap-y-0.5">
+          {marks.map((stepIndex) => {
+            const on = stepIndex === index;
+            const done = stepIndex < index;
             return (
-              <button
-                key={industry}
-                type="button"
-                onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'industry', value: industry })}
-                className={choiceClass(on)}
+              <span
+                key={stepIndex}
+                className={`font-mono text-[11px] leading-none ${on ? 'font-bold text-piloteer-signal' : done ? 'text-piloteer-metal' : 'text-piloteer-faint'}`}
               >
-                {industry}
-              </button>
+                {String(stepIndex + 1).padStart(2, '0')}
+              </span>
             );
           })}
         </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold">Customer segment</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {segments.map((segment) => {
-            const isSelected = state.companyOverview.customerSegment.includes(segment.value);
-            return (
-              <button
-                key={segment.value}
-                type="button"
-                onClick={() => {
-                  const current = state.companyOverview.customerSegment;
-                  const updated = isSelected
-                    ? current.filter((s) => s !== segment.value)
-                    : [...current, segment.value];
-                  dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'customerSegment', value: updated });
-                }}
-                className={choiceClass(isSelected)}
-              >
-                {segment.label}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold">Typical deal size</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {dealSizes.map((size) => (
-            <button
-              key={size}
-              type="button"
-              onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalDealSize', value: size })}
-              className={choiceClass(state.companyOverview.typicalDealSize === size)}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold">Typical sales cycle</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {salesCycles.map((cycle) => (
-            <button
-              key={cycle}
-              type="button"
-              onClick={() => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'typicalSalesCycle', value: cycle })}
-              className={choiceClass(state.companyOverview.typicalSalesCycle === cycle)}
-            >
-              {cycle}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold">Company website</h2>
-        <input
-          type="url"
-          value={state.companyOverview.website}
-          onChange={(e) => dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'website', value: e.target.value })}
-          placeholder="https://company.com"
-          aria-label="Company website"
-          className="mt-4 w-full rounded-2xl bg-piloteer-surface px-4 py-4 text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-        />
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold">Contacts</h2>
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ADD_CONTACT' })}
-            className="text-sm font-semibold text-piloteer-ink hover:text-white"
-          >
-            Add contact
-          </button>
-        </div>
-        <div className="mt-4 space-y-3">
-          {state.companyOverview.contacts.map((contact) => (
-            <div key={contact.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-              <input
-                value={contact.name}
-                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'name', value: e.target.value })}
-                placeholder="Name"
-                aria-label="Contact name"
-                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-              />
-              <input
-                value={contact.role}
-                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'role', value: e.target.value })}
-                placeholder="Role"
-                aria-label="Contact role"
-                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-              />
-              <input
-                value={contact.email}
-                onChange={(e) => dispatch({ type: 'UPDATE_CONTACT', id: contact.id, field: 'email', value: e.target.value })}
-                placeholder="Email"
-                aria-label="Contact email"
-                className="rounded-2xl bg-piloteer-surface px-4 py-3 text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-              />
-              <button
-                type="button"
-                onClick={() => dispatch({ type: 'REMOVE_CONTACT', id: contact.id })}
-                disabled={state.companyOverview.contacts.length === 1}
-                aria-label="Remove contact"
-                className="rounded-2xl px-3 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink disabled:opacity-30"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+      </div>
+      <p className="relative mt-2 truncate text-sm font-semibold text-piloteer-metal">{label}</p>
+      <div className="relative mt-auto h-1.5 overflow-hidden rounded-full bg-piloteer-void">
+        <div className="h-full rounded-full bg-piloteer-signal" style={{ width: `${Math.max(8, percent)}%` }} />
+      </div>
     </div>
   );
 }
 
-function ProductsStep({ state, dispatch }: { state: TeachState; dispatch: React.Dispatch<TeachAction> }) {
+function ChoiceButton({
+  index,
+  title,
+  detail,
+  selected,
+  onClick,
+  large,
+}: {
+  index: number;
+  title: string;
+  detail: string;
+  selected: boolean;
+  onClick: () => void;
+  large?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex h-full min-h-0 items-center gap-4 rounded-2xl border px-4 text-left transition-colors ${
+        selected
+          ? 'border-piloteer-signal bg-gradient-to-r from-piloteer-signal/18 to-piloteer-surface shadow-[inset_3px_0_0_#FF5C5C]'
+          : 'border-piloteer-hair bg-piloteer-surface hover:border-piloteer-hair-2 hover:bg-piloteer-surface-2'
+      }`}
+    >
+      <span className={`shrink-0 leading-none ${large ? 'w-14 font-disp text-[32px] font-bold' : 'w-8 font-disp text-lg font-bold'} ${selected ? 'text-piloteer-signal' : 'text-piloteer-faint'}`}>
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate font-disp font-semibold leading-tight ${large ? 'text-[28px]' : 'text-lg'}`}>{title}</span>
+        <span className={`mt-0.5 block truncate text-piloteer-metal ${large ? 'text-base' : 'text-sm'}`}>{detail}</span>
+      </span>
+      <span className={`h-2 w-2 shrink-0 rounded-full ${selected ? 'bg-piloteer-signal shadow-[0_0_10px_#FF5C5C]' : 'bg-piloteer-hair-2'}`} />
+    </button>
+  );
+}
+
+function ChoiceBoard({
+  options,
+}: {
+  options: { key: string; title: string; detail: string; selected: boolean; onClick: () => void }[];
+}) {
+  const large = options.length <= 4;
+  return (
+    <div
+      className="grid h-full min-h-0 gap-2"
+      style={{ gridTemplateRows: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      {options.map((option, index) => (
+        <ChoiceButton
+          key={option.key}
+          index={index}
+          title={option.title}
+          detail={option.detail}
+          selected={option.selected}
+          onClick={option.onClick}
+          large={large}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CompanyOverviewStep({
+  state,
+  dispatch,
+  focus,
+}: {
+  state: TeachState;
+  dispatch: React.Dispatch<TeachAction>;
+  focus: 'industry' | 'segment' | 'deal-size' | 'cycle' | 'website';
+}) {
+  const industries = [
+    ['Software / SaaS', 'Subscription products and usage-based software'],
+    ['Financial Services', 'Banking, insurance, capital markets, fintech'],
+    ['Healthcare', 'Providers, payers, and life sciences'],
+    ['Manufacturing', 'Industrial, supply chain, and the plant floor'],
+    ['Professional Services', 'Firms that sell expertise and time'],
+    ['Technology', 'Hardware, infrastructure, and platforms'],
+    ['Retail / E-commerce', 'Stores, marketplaces, and digital commerce'],
+    ['Other', 'A market that doesn’t sit in the list'],
+  ] as const;
+
+  const segments: { value: CustomerSegment; label: string; detail: string }[] = [
+    { value: 'smb', label: 'SMB', detail: 'One owner, a short evaluation, a faster yes' },
+    { value: 'mid-market', label: 'Mid-Market', detail: 'A buying group, and a real process' },
+    { value: 'enterprise', label: 'Enterprise', detail: 'Committees, security, and a longer path' },
+    { value: 'mixed', label: 'Mixed', detail: 'More than one of these motions' },
+  ];
+
+  const dealSizes = [
+    ['<$25K', 'A quick commercial close'],
+    ['$25K-$100K', 'A defined evaluation'],
+    ['$100K-$500K', 'Multiple stakeholders'],
+    ['$500K+', 'An executive decision'],
+  ] as const;
+
+  const salesCycles = [
+    ['<30 days', 'In and out inside a month'],
+    ['30-90 days', 'A quarter to land'],
+    ['90-180 days', 'A long evaluation'],
+    ['180+ days', 'A strategic buy'],
+  ] as const;
+
+  const setField = (field: string, value: string) =>
+    dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field, value });
+
+  if (focus === 'website') {
+    return (
+      <label className="teach-panel justify-center px-10">
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-piloteer-mute">Company website</span>
+        <input
+          type="url"
+          value={state.companyOverview.website}
+          onChange={(e) => setField('website', e.target.value)}
+          placeholder="https://company.com"
+          aria-label="Company website"
+          className="mt-4 w-full bg-transparent font-disp text-5xl font-bold tracking-editorial text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+        />
+      </label>
+    );
+  }
+
+  if (focus === 'industry') {
+    return (
+      <ChoiceBoard
+        options={industries.map(([title, detail]) => ({
+          key: title,
+          title,
+          detail,
+          selected: state.companyOverview.industry === title,
+          onClick: () => setField('industry', title),
+        }))}
+      />
+    );
+  }
+
+  if (focus === 'segment') {
+    return (
+      <ChoiceBoard
+        options={segments.map((segment) => ({
+          key: segment.value,
+          title: segment.label,
+          detail: segment.detail,
+          selected: state.companyOverview.customerSegment.includes(segment.value),
+          onClick: () => {
+            const current = state.companyOverview.customerSegment;
+            const updated = current.includes(segment.value)
+              ? current.filter((item) => item !== segment.value)
+              : [...current, segment.value];
+            dispatch({ type: 'UPDATE_COMPANY_OVERVIEW', field: 'customerSegment', value: updated });
+          },
+        }))}
+      />
+    );
+  }
+
+  if (focus === 'deal-size') {
+    return (
+      <ChoiceBoard
+        options={dealSizes.map(([title, detail]) => ({
+          key: title,
+          title,
+          detail,
+          selected: state.companyOverview.typicalDealSize === title,
+          onClick: () => setField('typicalDealSize', title),
+        }))}
+      />
+    );
+  }
+
+  return (
+    <ChoiceBoard
+      options={salesCycles.map(([title, detail]) => ({
+        key: title,
+        title,
+        detail,
+        selected: state.companyOverview.typicalSalesCycle === title,
+        onClick: () => setField('typicalSalesCycle', title),
+      }))}
+    />
+  );
+}
+
+function ProductsStep({
+  state,
+  dispatch,
+  onOpenSample,
+}: {
+  state: TeachState;
+  dispatch: React.Dispatch<TeachAction>;
+  onOpenSample: () => void;
+}) {
   const sample = state.products.find((product) => product.sample);
   const userProducts = state.products.filter((product) => !product.sample);
 
   return (
-    <div className="max-w-xl space-y-10">
-      {sample && (
-        <button
-          type="button"
-          onClick={() => {
-            const index = state.products.findIndex((product) => product.id === sample.id);
-            const aboutStep = 4;
-            dispatch({ type: 'SET_STEP', step: aboutStep, productIndex: index >= 0 ? index : 0 });
-          }}
-          className="flex w-full items-center gap-5 rounded-3xl bg-piloteer-surface p-5 text-left hover:bg-piloteer-surface-2"
-        >
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-piloteer-void text-2xl font-bold">
-            {sample.name.slice(0, 1)}
-          </span>
-          <span>
-            <span className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-piloteer-ink">{sample.name}</span>
-              <span className="rounded-full bg-piloteer-ink px-2 py-0.5 text-xs font-semibold text-piloteer-void">Sample</span>
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex shrink-0 items-center gap-3">
+        {sample && (
+          <button
+            type="button"
+            onClick={onOpenSample}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-piloteer-hair bg-piloteer-surface px-3 py-2.5 text-left hover:border-piloteer-hair-2 hover:bg-piloteer-surface-2"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-piloteer-void font-disp text-base font-bold">
+              {sample.name.slice(0, 1)}
             </span>
-            <span className="mt-1 block text-sm text-piloteer-metal">A filled example. Open it, then add your own products below.</span>
-          </span>
-        </button>
-      )}
-
-      <section>
-        <h2 className="text-sm font-semibold">How many products do you sell?</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
+            <span className="min-w-0">
+              <span className="flex items-center gap-2">
+                <span className="truncate text-sm font-semibold">{sample.name}</span>
+                <span className="rounded-full bg-piloteer-ink px-1.5 py-0.5 text-[10px] font-semibold text-piloteer-void">Sample</span>
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-piloteer-mute">A filled example. Open it anytime.</span>
+            </span>
+          </button>
+        )}
+        <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-piloteer-hair bg-piloteer-surface px-3 py-2.5">
+          <span className="mr-1 text-xs font-semibold text-piloteer-mute">How many</span>
           {[1, 2, 3, 4, 5, 6].map((count) => {
             const on = userProducts.length === count;
             return (
@@ -1213,8 +1249,8 @@ function ProductsStep({ state, dispatch }: { state: TeachState; dispatch: React.
                 key={count}
                 type="button"
                 onClick={() => dispatch({ type: 'SET_PRODUCT_COUNT', count })}
-                className={`h-12 w-12 rounded-2xl text-sm font-semibold transition-colors ${
-                  on ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
+                className={`flex h-10 w-10 items-center justify-center rounded-xl font-disp text-lg font-bold transition-colors ${
+                  on ? 'bg-piloteer-signal text-white shadow-[0_0_24px_-8px_#FF5C5C]' : 'border border-piloteer-hair bg-piloteer-void text-piloteer-ink hover:border-piloteer-signal-line'
                 }`}
               >
                 {count}
@@ -1222,23 +1258,66 @@ function ProductsStep({ state, dispatch }: { state: TeachState; dispatch: React.
             );
           })}
         </div>
-      </section>
+      </div>
 
-      {userProducts.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold">Product names</h2>
-          {userProducts.map((product, index) => (
-            <input
-              key={product.id}
-              value={product.name}
-              onChange={(e) => dispatch({ type: 'RENAME_PRODUCT', productId: product.id, name: e.target.value })}
-              placeholder={`Product ${index + 1}`}
-              aria-label={`Product ${index + 1} name`}
-              className="w-full rounded-2xl bg-piloteer-surface px-4 py-4 text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-            />
-          ))}
-        </section>
-      )}
+      <section className="teach-panel p-4">
+        <h2 className="text-sm font-semibold">Name them</h2>
+        <p className="mt-1 text-xs text-piloteer-mute">Use the names your sellers already say out loud.</p>
+        {userProducts.length === 0 ? (
+          <p className="flex flex-1 items-center justify-center text-sm text-piloteer-metal">Pick how many products you sell, then name each one.</p>
+        ) : (
+          <div
+            className="mt-3 grid min-h-0 flex-1 gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(userProducts.length, 3)}, minmax(0, 1fr))`,
+              gridTemplateRows: userProducts.length > 3 ? '1fr 1fr' : '1fr',
+            }}
+          >
+            {userProducts.map((product, index) => (
+              <label key={product.id} className="flex min-h-0 flex-col rounded-2xl border border-piloteer-hair bg-piloteer-void/40 p-5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-mute">Product {String(index + 1).padStart(2, '0')}</span>
+                <input
+                  value={product.name}
+                  onChange={(e) => dispatch({ type: 'RENAME_PRODUCT', productId: product.id, name: e.target.value })}
+                  placeholder="Product name"
+                  aria-label={`Product ${index + 1} name`}
+                  className="mt-4 w-full bg-transparent font-disp text-4xl font-bold tracking-editorial text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+                />
+                <span className="mt-3 text-sm text-piloteer-mute">The name sellers already use.</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function HowYouSellStep({
+  state,
+  dispatch,
+  showToast,
+}: {
+  state: TeachState;
+  dispatch: React.Dispatch<TeachAction>;
+  showToast: (message: string) => void;
+}) {
+  return (
+    <div className="space-y-16">
+      <section>
+        <h2 className="text-base font-semibold">Deal stages</h2>
+        <p className="mt-2 max-w-xl text-sm text-piloteer-metal">Drag a stage to put it where it belongs. AI Gov, for example, can sit after Negotiation.</p>
+        <div className="mt-6">
+          <DealStagesStep state={state} dispatch={dispatch} showToast={showToast} />
+        </div>
+      </section>
+      <section>
+        <h2 className="text-base font-semibold">Sales framework</h2>
+        <p className="mt-2 max-w-xl text-sm text-piloteer-metal">The motion your reps already run.</p>
+        <div className="mt-6">
+          <SalesFrameworkStep state={state} dispatch={dispatch} />
+        </div>
+      </section>
     </div>
   );
 }
@@ -1252,72 +1331,161 @@ function DealStagesStep({
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
 }) {
-  const [selectedTemplate, setSelectedTemplate] = useState<keyof typeof stageTemplates | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const templateKeys = Object.keys(stageTemplates) as Array<keyof typeof stageTemplates>;
+  const templateCopy: Record<keyof typeof stageTemplates, { label: string; line: string }> = {
+    standard: { label: 'Standard', line: 'A straight path from first conversation to signature.' },
+    enterprise: { label: 'Enterprise', line: 'Room for security, validation, and a buying committee.' },
+    saas: { label: 'SaaS', line: 'A demo or a trial before the commercial close.' },
+  };
+  const matched = templateKeys.find(
+    (key) =>
+      stageTemplates[key].length === state.dealStages.length &&
+      stageTemplates[key].every((stage, index) => state.dealStages[index]?.name === stage.name),
+  );
+
+  const loadTemplate = (key: keyof typeof stageTemplates) => {
+    dispatch({ type: 'SET_DEAL_STAGES', stages: stageTemplates[key] });
+    showToast(`Loaded ${templateCopy[key].label} template`);
+  };
+
+  if (state.dealStages.length === 0) {
+    return (
+      <div className="grid h-full min-h-0 grid-cols-3 gap-3">
+        {templateKeys.map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => loadTemplate(key)}
+            className="teach-panel p-5 text-left transition-colors hover:border-piloteer-signal"
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-signal">Template</span>
+            <span className="mt-2 block font-disp text-2xl font-bold tracking-editorial">{templateCopy[key].label}</span>
+            <span className="mt-1 block text-sm leading-snug text-piloteer-metal">{templateCopy[key].line}</span>
+            <ol className="mt-4 flex min-h-0 flex-1 flex-col justify-between border-t border-piloteer-hair pt-3">
+              {stageTemplates[key].map((stage, index) => (
+                <li key={stage.id} className="flex items-center gap-3">
+                  <span className="w-5 font-mono text-[10px] text-piloteer-mute">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-sm font-semibold">{stage.name}</span>
+                </li>
+              ))}
+            </ol>
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-10">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="flex gap-2">
-          {(Object.keys(stageTemplates) as Array<keyof typeof stageTemplates>).map((key) => (
+          {templateKeys.map((key) => (
             <button
               key={key}
-              onClick={() => {
-                dispatch({ type: 'SET_DEAL_STAGES', stages: stageTemplates[key] });
-                setSelectedTemplate(key);
-                showToast(`Loaded ${key} template`);
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                selectedTemplate === key ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
+              type="button"
+              onClick={() => loadTemplate(key)}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                matched === key ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
               }`}
             >
-              {key === 'saas' ? 'SaaS' : key.charAt(0).toUpperCase() + key.slice(1)}
+              {templateCopy[key].label}
             </button>
           ))}
         </div>
         <button
+          type="button"
           onClick={() => {
             dispatch({ type: 'ADD_DEAL_STAGE' });
             showToast('Stage added');
           }}
-          className="w-9 h-9 rounded-full border border-piloteer-hair text-piloteer-metal hover:text-piloteer-ink hover:border-piloteer-hair-2 transition-colors"
-          aria-label="Add stage"
+          className="rounded-full border border-piloteer-hair px-3 py-1.5 text-xs font-semibold text-piloteer-metal hover:border-piloteer-hair-2 hover:text-piloteer-ink"
         >
-          +
+          Add stage
         </button>
       </div>
 
-      <div className="max-w-3xl space-y-2.5">
-        {state.dealStages.length === 0 && (
-          <p className="text-base text-piloteer-metal">Choose a template, or add your own stages.</p>
-        )}
-        {state.dealStages.map((stage, index) => {
-          return (
-            <div key={stage.id} className="flex items-center gap-4">
-              <span className="w-6 font-mono text-xs text-piloteer-metal">{String(index + 1).padStart(2, '0')}</span>
-              <div className="flex-1 min-w-0 bg-piloteer-surface rounded-full pl-5 pr-3 py-3 flex items-center gap-3">
-                <input
-                  type="text"
-                  value={stage.name}
-                  onChange={(e) => dispatch({ type: 'UPDATE_DEAL_STAGE', id: stage.id, field: 'name', value: e.target.value })}
-                  className="flex-1 min-w-0 bg-transparent text-piloteer-ink font-semibold outline-none"
-                  placeholder="Stage"
-                />
-                <button
-                  onClick={() => {
-                    dispatch({ type: 'REMOVE_DEAL_STAGE', id: stage.id });
-                    showToast('Stage removed');
-                  }}
-                  aria-label="Remove stage"
-                  className="text-piloteer-metal hover:text-piloteer-ink transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+      <div
+        className="grid min-h-[120px] shrink-0 gap-2"
+        style={{ gridTemplateColumns: `repeat(${Math.min(state.dealStages.length, 6)}, minmax(0, 1fr))` }}
+      >
+        {state.dealStages.map((stage, index) => (
+          <div key={stage.id} className="flex min-w-0 flex-col justify-between rounded-2xl border border-piloteer-hair bg-[linear-gradient(180deg,#17171f,#111117)] px-3 py-3">
+            <span className="font-mono text-[10px] text-piloteer-signal">{String(index + 1).padStart(2, '0')}</span>
+            <span className="mt-3 truncate text-sm font-semibold">{stage.name || 'Untitled'}</span>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="grid min-h-0 flex-1 gap-2 overflow-y-auto pr-1"
+        style={{ gridTemplateRows: `repeat(${Math.max(state.dealStages.length, 1)}, minmax(52px, 1fr))` }}
+      >
+        {state.dealStages.map((stage, index) => (
+          <div
+            key={stage.id}
+            onDragOverCapture={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              const fromId = event.dataTransfer.getData('text/plain') || dragId;
+              if (!fromId || fromId === stage.id) return;
+              const stages = [...state.dealStages];
+              const from = stages.findIndex((item) => item.id === fromId);
+              const to = stages.findIndex((item) => item.id === stage.id);
+              if (from < 0 || to < 0) return;
+              const [moved] = stages.splice(from, 1);
+              stages.splice(to, 0, moved);
+              dispatch({ type: 'SET_DEAL_STAGES', stages });
+              setDragId(null);
+            }}
+            className={`flex items-center gap-2 ${dragId === stage.id ? 'opacity-50' : ''}`}
+          >
+            <button
+              type="button"
+              draggable
+              aria-label={`Drag to reorder ${stage.name || 'stage'}`}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', stage.id);
+                setDragId(stage.id);
+              }}
+              onDragEnd={() => setDragId(null)}
+              className="flex w-7 cursor-grab items-center justify-center text-piloteer-metal active:cursor-grabbing"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="9" cy="6" r="1.4" />
+                <circle cx="15" cy="6" r="1.4" />
+                <circle cx="9" cy="12" r="1.4" />
+                <circle cx="15" cy="12" r="1.4" />
+                <circle cx="9" cy="18" r="1.4" />
+                <circle cx="15" cy="18" r="1.4" />
+              </svg>
+            </button>
+            <span className="w-5 font-mono text-[11px] text-piloteer-mute">{String(index + 1).padStart(2, '0')}</span>
+            <div className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-xl border border-piloteer-hair bg-piloteer-surface px-3">
+              <input
+                type="text"
+                value={stage.name}
+                onChange={(e) => dispatch({ type: 'UPDATE_DEAL_STAGE', id: stage.id, field: 'name', value: e.target.value })}
+                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-piloteer-ink outline-none"
+                placeholder="Stage"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch({ type: 'REMOVE_DEAL_STAGE', id: stage.id });
+                  showToast('Stage removed');
+                }}
+                aria-label="Remove stage"
+                className="text-piloteer-metal hover:text-piloteer-ink"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1327,44 +1495,37 @@ function SalesFrameworkStep({ state, dispatch }: { state: TeachState; dispatch: 
   const frameworks: SalesFramework[] = ['challenger', 'meddic', 'meddpicc', 'sandler', 'spin', 'miller-heiman', 'custom', 'none'];
 
   return (
-    <div>
-      <div className="grid grid-cols-4 gap-3">
-        {frameworks.map((framework) => {
-          const info = frameworkDescriptions[framework];
-          const isSelected = state.salesFramework === framework;
-          return (
-            <button
-              key={framework}
-              onClick={() => dispatch({ type: 'SET_SALES_FRAMEWORK', framework })}
-              className={`min-h-[148px] p-5 rounded-2xl text-left flex flex-col justify-between transition-colors ${
-                isSelected ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
-              }`}
-            >
-              <span className="font-semibold text-[15px] leading-snug">{info.name}</span>
-              <span className={`mt-4 block text-sm leading-relaxed ${isSelected ? 'text-piloteer-void/80' : 'text-piloteer-metal'}`}>
-                {info.description}
-              </span>
-            </button>
-          );
-        })}
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <div className="grid min-h-0 flex-1 grid-rows-1">
+        <ChoiceBoard
+          options={frameworks.map((framework) => {
+            const info = frameworkDescriptions[framework];
+            return {
+              key: framework,
+              title: info.name,
+              detail: info.description,
+              selected: state.salesFramework === framework,
+              onClick: () => dispatch({ type: 'SET_SALES_FRAMEWORK', framework }),
+            };
+          })}
+        />
       </div>
-
       {state.salesFramework === 'custom' && (
-        <div className="mt-10 grid grid-cols-2 gap-4">
+        <div className="grid shrink-0 grid-cols-2 gap-2">
           <input
             type="text"
             value={state.customFrameworkName || ''}
             onChange={(e) => dispatch({ type: 'SET_CUSTOM_FRAMEWORK', name: e.target.value, notes: state.customFrameworkNotes })}
-            className="bg-transparent border-b border-piloteer-hair px-0 py-3 text-piloteer-ink outline-none focus:border-piloteer-ink"
-            placeholder="Name"
+            className="teach-field"
+            placeholder="Framework name"
             aria-label="Framework name"
           />
           <input
             type="text"
             value={state.customFrameworkNotes || ''}
             onChange={(e) => dispatch({ type: 'SET_CUSTOM_FRAMEWORK', name: state.customFrameworkName, notes: e.target.value })}
-            className="bg-transparent border-b border-piloteer-hair px-0 py-3 text-piloteer-ink outline-none focus:border-piloteer-ink"
-            placeholder="Elements"
+            className="teach-field"
+            placeholder="Elements, separated by commas"
             aria-label="Framework elements"
           />
         </div>
@@ -1421,23 +1582,53 @@ function ProductAboutStep({
   };
 
   return (
-    <div className="grid grid-cols-[180px_1fr] gap-16 items-start">
-      <div className="relative w-[180px] h-[180px] rounded-full bg-piloteer-surface flex items-center justify-center">
-        <span className="text-6xl font-bold tracking-editorial">{product.name.slice(0, 1)}</span>
-        {product.sample && (
-          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-piloteer-ink px-3 py-1 text-xs font-semibold text-piloteer-void">
-            Sample
-          </span>
-        )}
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-3">
+      <div className="teach-panel p-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-piloteer-void font-disp text-lg font-bold">{(product.name || '·').slice(0, 1)}</span>
+          <div>
+            <h2 className="text-sm font-semibold">Sources</h2>
+            <p className="text-xs text-piloteer-mute">Files and links Hunter can draft from.</p>
+          </div>
+          {product.sample && <span className="ml-auto rounded-full bg-piloteer-ink px-2 py-0.5 text-[10px] font-semibold text-piloteer-void">Sample</span>}
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={handleFileUpload} className="rounded-xl border border-piloteer-hair bg-piloteer-void/60 px-3 py-3 text-left hover:border-piloteer-signal">
+            <span className="block text-sm font-semibold">Upload files</span>
+            <span className="mt-0.5 block text-xs text-piloteer-mute">PDFs, decks, one-pagers</span>
+          </button>
+          <form
+            className="rounded-xl border border-piloteer-hair bg-piloteer-void/60 px-3 py-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddUrl();
+            }}
+          >
+            <span className="block text-sm font-semibold">Add a link</span>
+            <div className="mt-1.5 flex items-center gap-2">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://"
+                aria-label="Source URL"
+                className="min-w-0 flex-1 bg-transparent text-sm text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+              />
+              <button type="submit" disabled={!urlInput.trim()} className="text-sm font-semibold text-piloteer-signal disabled:opacity-30">Add</button>
+            </div>
+          </form>
+        </div>
+        <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+          {product.sources.length === 0 && (
+            <p className="py-6 text-center text-sm text-piloteer-mute">Nothing added yet.</p>
+          )}
           {product.sources.map((source) => (
-            <div key={source.id} className="inline-flex items-center gap-2 bg-piloteer-surface rounded-full pl-4 pr-2 py-2">
-              <span className="text-sm font-semibold">{source.name}</span>
-              {source.size && <span className="text-sm text-piloteer-metal">{source.size}</span>}
+            <div key={source.id} className="flex items-center gap-2 rounded-xl border border-piloteer-hair bg-piloteer-void/50 px-3 py-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-piloteer-mute">{source.type}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{source.name}</span>
+              {source.size && <span className="text-xs text-piloteer-mute">{source.size}</span>}
               <button
+                type="button"
                 onClick={() => dispatch({ type: 'REMOVE_PRODUCT_SOURCE', productId: product.id, sourceId: source.id })}
                 aria-label="Remove source"
                 className="text-piloteer-metal hover:text-piloteer-ink"
@@ -1448,50 +1639,28 @@ function ProductAboutStep({
               </button>
             </div>
           ))}
-          <button onClick={handleFileUpload} className="px-4 py-2 rounded-full text-sm text-piloteer-metal hover:text-piloteer-ink border border-piloteer-hair">
-            File
-          </button>
-          <form
-            className="inline-flex items-center gap-1 rounded-full border border-piloteer-hair pl-4 pr-1 py-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddUrl();
-            }}
-          >
-            <input
-              type="text"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="URL"
-              aria-label="Source URL"
-              className="w-24 bg-transparent text-sm text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-            />
-            <button type="submit" disabled={!urlInput.trim()} aria-label="Add URL" className="w-7 h-7 rounded-full text-piloteer-metal hover:text-piloteer-ink disabled:opacity-30">
-              +
-            </button>
-          </form>
         </div>
-
-        <textarea
-          value={product.description}
-          onChange={(e) => dispatch({ type: 'UPDATE_PRODUCT', productId: product.id, field: 'description', value: e.target.value })}
-          rows={4}
-          className="mt-10 w-full bg-transparent text-2xl font-medium leading-snug tracking-editorial text-piloteer-ink outline-none resize-none placeholder:text-piloteer-metal"
-          placeholder={`What does ${product.name} do?`}
-          aria-label={`Describe ${product.name}`}
-        />
-
         {!product.sample && (
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-3 flex shrink-0 items-center gap-3">
             <button type="button" onClick={draftWithHunter} disabled={isDrafting} className="btn-primary disabled:opacity-40">
               {isDrafting ? 'Hunter is drafting' : 'Draft with Hunter'}
             </button>
-            {product.draftGenerated && (
-              <span className="text-sm text-piloteer-metal">Edit anything that is not true.</span>
-            )}
+            {product.draftGenerated && <span className="text-xs text-piloteer-mute">Edit anything that isn’t true.</span>}
           </div>
         )}
       </div>
+
+      <label className="teach-panel p-4">
+        <span className="text-sm font-semibold">What does {product.name || 'this product'} do?</span>
+        <span className="mt-0.5 block text-xs text-piloteer-mute">One clear picture. Hunter drafts from your sources, and you can rewrite it.</span>
+        <textarea
+          value={product.description}
+          onChange={(e) => dispatch({ type: 'UPDATE_PRODUCT', productId: product.id, field: 'description', value: e.target.value })}
+          className="mt-3 min-h-0 w-full flex-1 resize-none bg-transparent font-disp text-xl font-semibold leading-snug tracking-editorial text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+          placeholder={`What does ${product.name || 'it'} do?`}
+          aria-label={`Describe ${product.name}`}
+        />
+      </label>
     </div>
   );
 }
@@ -1511,9 +1680,15 @@ function ProductPersonasStep({
   const handleAddPersona = () => {
     const newPersona: Persona = {
       id: `persona-${Date.now()}`,
-      name: 'New Persona',
+      name: 'New persona',
       role: '',
       notes: '',
+      titles: '',
+      owns: '',
+      accomplish: '',
+      matters: '',
+      hesitate: '',
+      signals: '',
     };
     dispatch({ type: 'ADD_PERSONA', productId: product.id, persona: newPersona });
     showToast('Persona added');
@@ -1529,85 +1704,109 @@ function ProductPersonasStep({
       .join('')
       .toUpperCase();
 
+  const fields = [
+    ['titles', 'Typical titles', 'CRO, VP Sales, RevOps'],
+    ['owns', 'What they own', 'Forecast, team time, the systems'],
+    ['accomplish', 'What they’re driving', 'The outcome they need this quarter'],
+    ['matters', 'What has to be true', 'What they need to believe before yes'],
+    ['hesitate', 'What makes them pause', 'The objection that slows the deal'],
+    ['signals', 'Buying signals', 'How you know they’re leaning in'],
+  ] as const;
+
   return (
-    <div>
-      <div className="flex gap-4 items-stretch">
-        {product.personas.map((persona) => {
-          const selected = openId === persona.id;
-          return (
-            <button
-              key={persona.id}
-              onClick={() => setOpenId(selected ? null : persona.id)}
-              className={`w-52 shrink-0 rounded-3xl px-5 py-6 text-left transition-colors ${
-                selected ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
-              }`}
-            >
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold ${
-                selected ? 'bg-piloteer-void text-piloteer-ink' : 'bg-piloteer-void text-piloteer-ink'
-              }`}>
-                {initials(persona.name) || '·'}
-              </div>
-              <div className="mt-8 font-semibold leading-snug">{persona.name}</div>
-              <div className={`mt-2 text-sm font-semibold ${selected ? 'text-piloteer-void/80' : 'text-piloteer-metal'}`}>
-                {persona.role}
-              </div>
-            </button>
-          );
-        })}
-        <button
-          onClick={handleAddPersona}
-          aria-label="Add persona"
-          className="w-52 shrink-0 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-metal hover:text-piloteer-ink hover:border-piloteer-hair-2 transition-colors"
-        >
-          +
+    <div className="grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)] gap-3">
+      <div className="teach-panel p-2">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-1 pt-1">
+          {product.personas.length === 0 && (
+            <p className="px-2 py-6 text-center text-xs leading-relaxed text-piloteer-mute">No buyers yet. Add the people Hunter should recognize.</p>
+          )}
+          {product.personas.map((persona) => {
+            const selected = openId === persona.id;
+            return (
+              <button
+                key={persona.id}
+                type="button"
+                onClick={() => setOpenId(selected ? null : persona.id)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left ${
+                  selected ? 'bg-piloteer-ink text-piloteer-void' : 'hover:bg-piloteer-surface-2'
+                }`}
+              >
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${selected ? 'bg-piloteer-void text-piloteer-ink' : 'bg-piloteer-void text-piloteer-ink'}`}>
+                  {initials(persona.name) || '·'}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold">{persona.name}</span>
+                  <span className={`block truncate text-[11px] ${selected ? 'text-piloteer-void/70' : 'text-piloteer-mute'}`}>{persona.role || 'Role'}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <button type="button" onClick={handleAddPersona} className="mt-1 shrink-0 rounded-xl border border-dashed border-piloteer-hair px-3 py-2 text-sm font-semibold text-piloteer-metal hover:border-piloteer-hair-2 hover:text-piloteer-ink">
+          Add persona
         </button>
       </div>
 
-      {open && (
-        <div className="mt-10 max-w-xl">
-          <div className="flex items-center justify-between gap-4">
-            <input
-              value={open.name}
-              onChange={(e) =>
-                dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'name', value: e.target.value })
-              }
-              className="flex-1 bg-transparent text-2xl font-semibold outline-none"
-              aria-label="Persona name"
-            />
-            <button
-              onClick={() => {
-                dispatch({ type: 'REMOVE_PERSONA', productId: product.id, personaId: open.id });
-                showToast('Persona removed');
-                setOpenId(null);
-              }}
-              aria-label="Remove persona"
-              className="text-piloteer-metal hover:text-piloteer-ink"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+      <div className="teach-panel p-4">
+        {!open ? (
+          <div className="flex flex-1 flex-col items-start justify-center">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-piloteer-signal">Buyer</p>
+            <p className="mt-2 font-disp text-2xl font-bold tracking-editorial">Who has to say yes?</p>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-piloteer-metal">Add a persona, then teach Hunter the title, the outcome, and the thing that makes them hesitate.</p>
           </div>
-          <input
-            value={open.role}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'role', value: e.target.value })
-            }
-            placeholder="Role"
-            className="mt-2 w-full bg-transparent text-base text-piloteer-ink outline-none placeholder:text-piloteer-metal"
-            aria-label="Role"
-          />
-          <textarea
-            value={open.notes}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'notes', value: e.target.value })
-            }
-            rows={3}
-            className="mt-6 w-full bg-transparent text-piloteer-metal leading-relaxed outline-none resize-none"
-            aria-label="Notes"
-          />
-        </div>
-      )}
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <input
+                value={open.name}
+                onChange={(e) =>
+                  dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'name', value: e.target.value })
+                }
+                className="min-w-0 flex-1 bg-transparent font-disp text-xl font-bold tracking-editorial outline-none"
+                aria-label="Persona name"
+              />
+              <input
+                value={open.role}
+                onChange={(e) =>
+                  dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field: 'role', value: e.target.value })
+                }
+                placeholder="Role"
+                className="w-40 bg-transparent text-sm text-piloteer-metal outline-none placeholder:text-piloteer-faint"
+                aria-label="Role"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch({ type: 'REMOVE_PERSONA', productId: product.id, personaId: open.id });
+                  showToast('Persona removed');
+                  setOpenId(null);
+                }}
+                aria-label="Remove persona"
+                className="text-piloteer-metal hover:text-piloteer-ink"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-2">
+              {fields.map(([field, label, hint]) => (
+                <label key={field} className="flex min-h-0 flex-col">
+                  <span className="mb-1 text-xs font-semibold text-piloteer-metal">{label}</span>
+                  <input
+                    value={open[field]}
+                    onChange={(e) =>
+                      dispatch({ type: 'UPDATE_PERSONA', productId: product.id, personaId: open.id, field, value: e.target.value })
+                    }
+                    placeholder={hint}
+                    className="teach-field min-h-0 flex-1"
+                  />
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1633,29 +1832,93 @@ function ProductKeySignalsStep({
   ];
 
   return (
-    <div>
-      <div className="flex gap-8 mb-12">
-        {subSteps.map((step, idx) => (
-          <button
-            key={step.id}
-            onClick={() => setSubStep(step.id)}
-            className="text-left"
-          >
-            <div className={`h-px w-16 mb-3 ${subStep === step.id ? 'bg-piloteer-ink' : step.completed ? 'bg-piloteer-verified' : 'bg-piloteer-hair'}`} />
-            <div className={`text-sm font-semibold ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-metal'}`}>
-              0{idx + 1}
-            </div>
-            <div className={`mt-1 text-sm font-semibold ${subStep === step.id ? 'text-piloteer-ink' : 'text-piloteer-metal'}`}>
-              {step.label}
-            </div>
-          </button>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <div className="grid shrink-0 grid-cols-4 gap-2">
+        {subSteps.map((step, idx) => {
+          const active = subStep === step.id;
+          return (
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => setSubStep(step.id)}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
+                active
+                  ? 'border-piloteer-signal bg-piloteer-signal-soft text-piloteer-ink shadow-[inset_0_-2px_0_#FF5C5C]'
+                  : 'border-piloteer-hair text-piloteer-metal hover:border-piloteer-hair-2 hover:text-piloteer-ink'
+              }`}
+            >
+              <span className={`font-mono text-[10px] ${active ? 'text-piloteer-signal' : 'text-piloteer-mute'}`}>0{idx + 1}</span>
+              <span className="truncate text-sm font-semibold">{step.label}</span>
+              {step.completed && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-piloteer-verified" />}
+            </button>
+          );
+        })}
+      </div>
+      <div className="min-h-0 flex-1">
+        {subStep === 'questions' && <KeyQuestionsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
+        {subStep === 'objectives' && <KeyObjectivesWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
+        {subStep === 'differentiators' && <DifferentiatorsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
+        {subStep === 'objections' && <ObjectionsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
+      </div>
+    </div>
+  );
+}
+
+function PlaybookRows({
+  columns,
+  rows,
+  onChange,
+  onRemove,
+  onAdd,
+}: {
+  columns: { key: string; label: string }[];
+  rows: { id: string; values: Record<string, string> }[];
+  onChange: (id: string, key: string, value: string) => void;
+  onRemove: (id: string) => void;
+  onAdd: () => void;
+}) {
+  const grid = columns.length > 1
+    ? 'grid-cols-[1.75rem_minmax(0,1fr)_minmax(0,1fr)_1.5rem]'
+    : 'grid-cols-[1.75rem_minmax(0,1fr)_1.5rem]';
+
+  return (
+    <div className="teach-panel h-full">
+      <div className={`grid shrink-0 ${grid} gap-x-4 border-b border-piloteer-hair px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-piloteer-mute`}>
+        <span />
+        {columns.map((column) => (
+          <span key={column.key}>{column.label}</span>
+        ))}
+        <span />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {rows.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-piloteer-mute">Nothing here yet. Add the first line Hunter should recognize.</p>
+        )}
+        {rows.map((row, index) => (
+          <div key={row.id} className={`grid ${grid} items-center gap-x-4 border-b border-piloteer-hair/80 px-4 py-2`}>
+            <span className="font-mono text-[11px] text-piloteer-mute">{String(index + 1).padStart(2, '0')}</span>
+            {columns.map((column) => (
+              <input
+                key={column.key}
+                type="text"
+                value={row.values[column.key] ?? ''}
+                onChange={(event) => onChange(row.id, column.key, event.target.value)}
+                aria-label={column.label}
+                placeholder={column.label}
+                className="w-full bg-transparent text-sm text-piloteer-ink outline-none placeholder:text-piloteer-faint"
+              />
+            ))}
+            <button type="button" onClick={() => onRemove(row.id)} aria-label="Remove" className="text-piloteer-metal hover:text-piloteer-ink">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         ))}
       </div>
-
-      {subStep === 'questions' && <KeyQuestionsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
-      {subStep === 'objectives' && <KeyObjectivesWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
-      {subStep === 'differentiators' && <DifferentiatorsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
-      {subStep === 'objections' && <ObjectionsWorkshop product={product} dispatch={dispatch} showToast={showToast} />}
+      <button type="button" onClick={onAdd} className="shrink-0 border-t border-piloteer-hair px-4 py-2.5 text-left text-sm font-semibold text-piloteer-signal hover:text-piloteer-ink">
+        Add a line
+      </button>
     </div>
   );
 }
@@ -1669,62 +1932,20 @@ function KeyQuestionsWorkshop({
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
 }) {
-  const [newQuestion, setNewQuestion] = useState('');
-
-  const handleAddQuestion = () => {
-    if (newQuestion.trim()) {
-      dispatch({ type: 'ADD_KEY_QUESTION', productId: product.id, question: newQuestion });
-      setNewQuestion('');
-      showToast('Question added');
-    }
-  };
-
   return (
-    <div>
-      <ol>
-        {product.keyQuestions.map((question, index) => (
-          <li key={index} className="flex items-baseline gap-6 py-4 border-b border-piloteer-hair">
-            <span className="w-6 font-mono text-[11px] text-piloteer-metal">{String(index + 1).padStart(2, '0')}</span>
-            <input
-              type="text"
-              value={question}
-              onChange={(e) => dispatch({ type: 'UPDATE_KEY_QUESTION', productId: product.id, index, value: e.target.value })}
-              className="flex-1 bg-transparent outline-none text-lg text-piloteer-ink"
-              aria-label="Question"
-            />
-            <button
-              onClick={() => {
-                dispatch({ type: 'REMOVE_KEY_QUESTION', productId: product.id, index });
-                showToast('Question removed');
-              }}
-              aria-label="Remove question"
-              className="text-piloteer-metal hover:text-piloteer-ink"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </li>
-        ))}
-      </ol>
-      <form
-        className="flex items-baseline gap-6 py-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleAddQuestion();
-        }}
-      >
-        <span className="w-6 font-mono text-[11px] text-piloteer-metal">{String(product.keyQuestions.length + 1).padStart(2, '0')}</span>
-        <input
-          type="text"
-          value={newQuestion}
-          onChange={(e) => setNewQuestion(e.target.value)}
-          placeholder="Add"
-          aria-label="Add question"
-          className="flex-1 bg-transparent outline-none text-lg text-piloteer-ink placeholder:text-piloteer-metal"
-        />
-      </form>
-    </div>
+    <PlaybookRows
+      columns={[{ key: 'question', label: 'Discovery question' }]}
+      rows={product.keyQuestions.map((question, index) => ({ id: String(index), values: { question } }))}
+      onChange={(id, _key, value) => dispatch({ type: 'UPDATE_KEY_QUESTION', productId: product.id, index: Number(id), value })}
+      onRemove={(id) => {
+        dispatch({ type: 'REMOVE_KEY_QUESTION', productId: product.id, index: Number(id) });
+        showToast('Question removed');
+      }}
+      onAdd={() => {
+        dispatch({ type: 'ADD_KEY_QUESTION', productId: product.id, question: '' });
+        showToast('Question added');
+      }}
+    />
   );
 }
 
@@ -1737,54 +1958,20 @@ function KeyObjectivesWorkshop({
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
 }) {
-  const [newObjective, setNewObjective] = useState('');
-
-  const handleAddObjective = () => {
-    if (newObjective.trim()) {
-      dispatch({ type: 'ADD_KEY_OBJECTIVE', productId: product.id, objective: newObjective });
-      setNewObjective('');
-      showToast('Objective added');
-    }
-  };
-
   return (
-    <div>
-      <div className="flex flex-wrap gap-2">
-        {product.keyObjectives.map((objective, index) => (
-          <div key={index} className="inline-flex items-center gap-3 bg-piloteer-surface rounded-full pl-5 pr-3 py-3">
-            <span className="text-sm font-semibold">{objective}</span>
-            <button
-              onClick={() => {
-                dispatch({ type: 'REMOVE_KEY_OBJECTIVE', productId: product.id, index });
-                showToast('Objective removed');
-              }}
-              aria-label="Remove objective"
-              className="text-piloteer-metal hover:text-piloteer-ink"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ))}
-      </div>
-      <form
-        className="mt-8"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleAddObjective();
-        }}
-      >
-        <input
-          type="text"
-          value={newObjective}
-          onChange={(e) => setNewObjective(e.target.value)}
-          placeholder="Add"
-          aria-label="Add objective"
-          className="w-full bg-transparent border-b border-piloteer-hair py-3 text-lg outline-none placeholder:text-piloteer-metal"
-        />
-      </form>
-    </div>
+    <PlaybookRows
+      columns={[{ key: 'objective', label: 'Key objective' }]}
+      rows={product.keyObjectives.map((objective, index) => ({ id: String(index), values: { objective } }))}
+      onChange={(id, _key, value) => dispatch({ type: 'UPDATE_KEY_OBJECTIVE', productId: product.id, index: Number(id), value })}
+      onRemove={(id) => {
+        dispatch({ type: 'REMOVE_KEY_OBJECTIVE', productId: product.id, index: Number(id) });
+        showToast('Objective removed');
+      }}
+      onAdd={() => {
+        dispatch({ type: 'ADD_KEY_OBJECTIVE', productId: product.id, objective: '' });
+        showToast('Objective added');
+      }}
+    />
   );
 }
 
@@ -1808,50 +1995,19 @@ function DifferentiatorsWorkshop({
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-x-8 text-sm font-semibold text-piloteer-metal pb-3">
-        <span>They</span>
-        <span>We</span>
-        <span />
-      </div>
-      {product.differentiators.map((diff) => (
-        <div key={diff.id} className="grid grid-cols-[1fr_1fr_auto] gap-x-8 items-start border-t border-piloteer-hair py-4">
-          <textarea
-            value={diff.they}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_DIFFERENTIATOR', productId: product.id, diffId: diff.id, field: 'they', value: e.target.value })
-            }
-            rows={2}
-            className="bg-transparent text-piloteer-metal leading-relaxed outline-none resize-none"
-            aria-label="They"
-          />
-          <textarea
-            value={diff.we}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_DIFFERENTIATOR', productId: product.id, diffId: diff.id, field: 'we', value: e.target.value })
-            }
-            rows={2}
-            className="bg-transparent text-piloteer-ink leading-relaxed outline-none resize-none"
-            aria-label="We"
-          />
-          <button
-            onClick={() => {
-              dispatch({ type: 'REMOVE_DIFFERENTIATOR', productId: product.id, diffId: diff.id });
-              showToast('Differentiator removed');
-            }}
-            aria-label="Remove differentiator"
-            className="text-piloteer-metal hover:text-piloteer-ink mt-1"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      ))}
-      <button onClick={handleAddDifferentiator} className="mt-4 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
-        Add
-      </button>
-    </div>
+    <PlaybookRows
+      columns={[
+        { key: 'they', label: 'They' },
+        { key: 'we', label: 'We' },
+      ]}
+      rows={product.differentiators.map((diff) => ({ id: diff.id, values: { they: diff.they, we: diff.we } }))}
+      onChange={(id, key, value) => dispatch({ type: 'UPDATE_DIFFERENTIATOR', productId: product.id, diffId: id, field: key, value })}
+      onRemove={(id) => {
+        dispatch({ type: 'REMOVE_DIFFERENTIATOR', productId: product.id, diffId: id });
+        showToast('Differentiator removed');
+      }}
+      onAdd={handleAddDifferentiator}
+    />
   );
 }
 
@@ -1875,50 +2031,19 @@ function ObjectionsWorkshop({
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-[1fr_1.4fr_auto] gap-x-8 text-sm font-semibold text-piloteer-metal pb-3">
-        <span>Objection</span>
-        <span>Counter</span>
-        <span />
-      </div>
-      {product.objections.map((obj) => (
-        <div key={obj.id} className="grid grid-cols-[1fr_1.4fr_auto] gap-x-8 items-start border-t border-piloteer-hair py-4">
-          <input
-            type="text"
-            value={obj.objection}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_OBJECTION', productId: product.id, objId: obj.id, field: 'objection', value: e.target.value })
-            }
-            className="bg-transparent text-piloteer-metal outline-none"
-            aria-label="Objection"
-          />
-          <textarea
-            value={obj.counter}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_OBJECTION', productId: product.id, objId: obj.id, field: 'counter', value: e.target.value })
-            }
-            rows={2}
-            className="bg-transparent text-piloteer-ink leading-relaxed outline-none resize-none"
-            aria-label="Counter"
-          />
-          <button
-            onClick={() => {
-              dispatch({ type: 'REMOVE_OBJECTION', productId: product.id, objId: obj.id });
-              showToast('Objection removed');
-            }}
-            aria-label="Remove objection"
-            className="text-piloteer-metal hover:text-piloteer-ink mt-1"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      ))}
-      <button onClick={handleAddObjection} className="mt-4 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
-        Add
-      </button>
-    </div>
+    <PlaybookRows
+      columns={[
+        { key: 'objection', label: 'Objection' },
+        { key: 'counter', label: 'Counter' },
+      ]}
+      rows={product.objections.map((obj) => ({ id: obj.id, values: { objection: obj.objection, counter: obj.counter } }))}
+      onChange={(id, key, value) => dispatch({ type: 'UPDATE_OBJECTION', productId: product.id, objId: id, field: key, value })}
+      onRemove={(id) => {
+        dispatch({ type: 'REMOVE_OBJECTION', productId: product.id, objId: id });
+        showToast('Objection removed');
+      }}
+      onAdd={handleAddObjection}
+    />
   );
 }
 
@@ -1936,143 +2061,109 @@ function ProductCompetitiveStep({
       id: `comp-${Date.now()}`,
       name: '',
       profile: '',
+      whyChoose: '',
+      fallShort: '',
+      emphasize: '',
+      objection: '',
+      response: '',
     };
     dispatch({ type: 'ADD_COMPETITOR', productId: product.id, competitor: newComp });
     showToast('Competitor added');
   };
 
-  const handleAddAdvantage = () => {
-    const newAdv: ComparisonAdvantage = {
-      id: `adv-${Date.now()}`,
-      ourAdvantage: '',
-      competitorName: product.competitors[0]?.name || '',
-    };
-    dispatch({ type: 'ADD_COMPARISON_ADVANTAGE', productId: product.id, advantage: newAdv });
-    showToast('Advantage added');
-  };
-
   const [activeId, setActiveId] = useState<string | null>(product.competitors[0]?.id ?? null);
   const active = product.competitors.find((comp) => comp.id === activeId) || product.competitors[0];
 
+  const fields = [
+    ['whyChoose', 'Why buyers choose them'],
+    ['fallShort', 'Where they fall short'],
+    ['emphasize', 'What reps should emphasize'],
+    ['objection', 'Common objection'],
+    ['response', 'Best response'],
+  ] as const;
+
   return (
-    <div>
-      <div className="flex gap-3 items-stretch">
-        {product.competitors.map((comp) => {
-          const selected = active?.id === comp.id;
-          return (
-            <button
-              key={comp.id}
-              onClick={() => setActiveId(comp.id)}
-              className={`w-36 h-36 rounded-3xl flex flex-col items-center justify-center gap-3 transition-colors ${
-                selected ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink hover:bg-piloteer-surface-2'
-              }`}
-            >
-              <span className="text-3xl font-bold">{(comp.name || '·').slice(0, 1)}</span>
-              <span className="text-xs font-semibold text-center px-3 leading-snug">{comp.name}</span>
-            </button>
-          );
-        })}
-        <button
-          onClick={handleAddCompetitor}
-          aria-label="Add competitor"
-          className="w-36 h-36 rounded-3xl border border-dashed border-piloteer-hair text-3xl text-piloteer-metal hover:text-piloteer-ink"
-        >
-          +
+    <div className="grid h-full min-h-0 grid-cols-[220px_minmax(0,1fr)] gap-3">
+      <div className="teach-panel p-2">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-1 pt-1">
+          {product.competitors.length === 0 && (
+            <p className="px-2 py-6 text-center text-xs leading-relaxed text-piloteer-mute">No competitors yet.</p>
+          )}
+          {product.competitors.map((comp) => {
+            const selected = active?.id === comp.id;
+            return (
+              <button
+                key={comp.id}
+                type="button"
+                onClick={() => setActiveId(comp.id)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left ${
+                  selected ? 'bg-piloteer-ink text-piloteer-void' : 'hover:bg-piloteer-surface-2'
+                }`}
+              >
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-disp text-sm font-bold ${selected ? 'bg-piloteer-void text-piloteer-ink' : 'bg-piloteer-void'}`}>
+                  {(comp.name || '·').slice(0, 1)}
+                </span>
+                <span className="min-w-0 truncate text-sm font-semibold">{comp.name || 'Untitled'}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button type="button" onClick={handleAddCompetitor} className="mt-1 shrink-0 rounded-xl border border-dashed border-piloteer-hair px-3 py-2 text-sm font-semibold text-piloteer-metal hover:border-piloteer-hair-2 hover:text-piloteer-ink">
+          Add competitor
         </button>
       </div>
 
-      {active && (
-        <div className="mt-10 max-w-2xl">
-          <div className="flex items-center gap-4">
-            <input
-              value={active.name}
-              onChange={(e) =>
-                dispatch({ type: 'UPDATE_COMPETITOR', productId: product.id, compId: active.id, field: 'name', value: e.target.value })
-              }
-              className="flex-1 bg-transparent text-3xl font-semibold outline-none"
-              aria-label="Competitor name"
-            />
-            <button
-              onClick={() => {
-                dispatch({ type: 'REMOVE_COMPETITOR', productId: product.id, compId: active.id });
-                showToast('Competitor removed');
-                setActiveId(null);
-              }}
-              aria-label="Remove competitor"
-              className="text-piloteer-metal hover:text-piloteer-ink"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+      <div className="teach-panel p-4">
+        {!active ? (
+          <div className="flex flex-1 flex-col justify-center">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-piloteer-signal">Competitor</p>
+            <p className="mt-2 font-disp text-2xl font-bold tracking-editorial">Who do you sell against?</p>
+            <p className="mt-2 max-w-md text-sm text-piloteer-metal">Name them, then say why buyers pick them and where they fall short.</p>
           </div>
-          <textarea
-            value={active.profile}
-            onChange={(e) =>
-              dispatch({ type: 'UPDATE_COMPETITOR', productId: product.id, compId: active.id, field: 'profile', value: e.target.value })
-            }
-            rows={3}
-            className="mt-4 w-full bg-transparent text-piloteer-metal leading-relaxed outline-none resize-none"
-            aria-label="Profile"
-          />
-        </div>
-      )}
-
-      {product.competitors.length > 0 && (
-        <div className="mt-12">
-          {product.comparisonAdvantages.map((adv) => (
-            <div key={adv.id} className="flex items-center gap-4 py-3 border-t border-piloteer-hair">
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
               <input
-                type="text"
-                value={adv.ourAdvantage}
-                onChange={(e) => {
-                  dispatch({
-                    type: 'UPDATE_COMPARISON_ADVANTAGE',
-                    productId: product.id,
-                    advId: adv.id,
-                    field: 'ourAdvantage',
-                    value: e.target.value,
-                  });
-                }}
-                className="flex-1 bg-transparent outline-none text-piloteer-ink"
-                aria-label="Advantage"
+                value={active.name}
+                onChange={(e) =>
+                  dispatch({ type: 'UPDATE_COMPETITOR', productId: product.id, compId: active.id, field: 'name', value: e.target.value })
+                }
+                className="min-w-0 flex-1 bg-transparent font-disp text-xl font-bold tracking-editorial outline-none"
+                aria-label="Competitor name"
+                placeholder="Competitor name"
               />
-              <span className="text-[11px] font-mono text-piloteer-metal">vs</span>
-              <select
-                value={adv.competitorName}
-                onChange={(e) => {
-                  dispatch({
-                    type: 'UPDATE_COMPARISON_ADVANTAGE',
-                    productId: product.id,
-                    advId: adv.id,
-                    field: 'competitorName',
-                    value: e.target.value,
-                  });
-                }}
-                className="bg-transparent text-sm text-piloteer-metal outline-none"
-                aria-label="Competitor"
-              >
-                <option value="">—</option>
-                {product.competitors.map((c) => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
-                ))}
-              </select>
               <button
-                onClick={() => dispatch({ type: 'REMOVE_COMPARISON_ADVANTAGE', productId: product.id, advId: adv.id })}
-                aria-label="Remove advantage"
+                type="button"
+                onClick={() => {
+                  dispatch({ type: 'REMOVE_COMPETITOR', productId: product.id, compId: active.id });
+                  showToast('Competitor removed');
+                  setActiveId(null);
+                }}
+                aria-label="Remove competitor"
                 className="text-piloteer-metal hover:text-piloteer-ink"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
-          ))}
-          <button onClick={handleAddAdvantage} className="mt-3 text-sm font-semibold text-piloteer-metal hover:text-piloteer-ink">
-            Add
-          </button>
-        </div>
-      )}
+            <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 gap-2">
+              {fields.map(([field, label]) => (
+                <label key={field} className={`flex min-h-0 flex-col ${field === 'response' ? 'col-span-2' : ''}`}>
+                  <span className="mb-1 text-xs font-semibold text-piloteer-metal">{label}</span>
+                  <textarea
+                    value={active[field]}
+                    onChange={(e) =>
+                      dispatch({ type: 'UPDATE_COMPETITOR', productId: product.id, compId: active.id, field, value: e.target.value })
+                    }
+                    className="teach-field min-h-0 flex-1 resize-none"
+                  />
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -2095,32 +2186,85 @@ function ProductMarketInfoStep({
     showToast('Signal added');
   };
 
-  const columns: { category: 'buyerEnvironment' | 'companyProductEnvironment' | 'dealEnvironmentSignals'; title: string }[] = [
-    { category: 'buyerEnvironment', title: 'Buyer Environment' },
-    { category: 'companyProductEnvironment', title: 'Company & Product' },
-    { category: 'dealEnvironmentSignals', title: 'Deal' },
+  const columns: {
+    category: 'buyerEnvironment' | 'companyProductEnvironment' | 'dealEnvironmentSignals';
+    title: string;
+    context: string;
+    examples: string[];
+  }[] = [
+    {
+      category: 'buyerEnvironment',
+      title: 'Buyer environment',
+      context: 'Pressures changing how customers buy.',
+      examples: ['Budget got tighter', 'Doing more with fewer people', 'Harder to add another vendor'],
+    },
+    {
+      category: 'companyProductEnvironment',
+      title: 'Industry trends',
+      context: 'What’s changing in your buyers’ world?',
+      examples: ['Everyone is pushing AI', 'New compliance requirements', 'Competitors are moving faster'],
+    },
+    {
+      category: 'dealEnvironmentSignals',
+      title: 'Macro factors',
+      context: 'Broader forces affecting deals.',
+      examples: ['Spend is under more scrutiny', 'Deals are taking longer to approve', 'Hiring is still tight'],
+    },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-12">
+    <div className="grid h-full min-h-0 grid-cols-3 gap-3">
       {columns.map((column) => {
         const signals = product[column.category];
         return (
-          <section key={column.category}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold">{column.title}</h2>
+          <section key={column.category} className="teach-panel p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold">{column.title}</h2>
+                <p className="mt-0.5 text-xs text-piloteer-mute">{column.context}</p>
+              </div>
               <button
+                type="button"
                 onClick={() => handleAddSignal(column.category)}
                 aria-label={`Add ${column.title}`}
-                className="text-piloteer-metal hover:text-piloteer-ink text-lg leading-none"
+                className="rounded-full border border-piloteer-hair px-2 py-0.5 text-sm text-piloteer-metal hover:text-piloteer-ink"
               >
                 +
               </button>
             </div>
-            <ul>
-              {signals.map((signal) => (
-                <li key={signal.id} className="flex items-start gap-2 py-3 border-t border-piloteer-hair">
-                  <textarea
+            <div
+              className="mt-3 grid min-h-0 flex-1 gap-2 overflow-y-auto"
+              style={{ gridTemplateRows: `repeat(${column.examples.length + signals.filter((signal) => !column.examples.includes(signal.signal)).length}, minmax(64px, 1fr))` }}
+            >
+              {column.examples.map((example) => {
+                const used = signals.some((item) => item.signal === example);
+                return (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => {
+                      if (used) return;
+                      dispatch({
+                        type: 'ADD_MARKET_SIGNAL',
+                        productId: product.id,
+                        category: column.category,
+                        signal: { id: `sig-${Date.now()}`, signal: example },
+                      });
+                    }}
+                    className={`flex h-full items-center justify-between gap-3 rounded-xl border px-3 text-left text-sm ${
+                      used
+                        ? 'border-piloteer-verified-line bg-piloteer-verified-soft text-piloteer-ink'
+                        : 'border-piloteer-hair bg-piloteer-void/40 text-piloteer-metal hover:border-piloteer-hair-2 hover:text-piloteer-ink'
+                    }`}
+                  >
+                    <span>{example}</span>
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${used ? 'bg-piloteer-verified' : 'bg-piloteer-hair-2'}`} />
+                  </button>
+                );
+              })}
+              {signals.filter((signal) => !column.examples.includes(signal.signal)).map((signal) => (
+                <div key={signal.id} className="flex items-center gap-2 rounded-xl border border-piloteer-hair bg-piloteer-void/50 px-3 py-2">
+                  <input
                     value={signal.signal}
                     onChange={(e) => {
                       const updatedSignals = signals.map((item) =>
@@ -2128,25 +2272,25 @@ function ProductMarketInfoStep({
                       );
                       dispatch({ type: 'UPDATE_PRODUCT', productId: product.id, field: column.category, value: updatedSignals });
                     }}
-                    rows={2}
-                    className="flex-1 bg-transparent text-sm text-piloteer-metal leading-relaxed outline-none resize-none"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-piloteer-ink outline-none"
                     aria-label={column.title}
                   />
                   <button
+                    type="button"
                     onClick={() => {
                       dispatch({ type: 'REMOVE_MARKET_SIGNAL', productId: product.id, category: column.category, signalId: signal.id });
                       showToast('Signal removed');
                     }}
                     aria-label="Remove signal"
-                    className="text-piloteer-metal hover:text-piloteer-ink mt-1"
+                    className="text-piloteer-metal hover:text-piloteer-ink"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                       <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         );
       })}
@@ -2158,45 +2302,69 @@ function GapsContradictionsStep({
   state,
   dispatch,
   showToast,
+  gaps,
+  onFix,
 }: {
   state: TeachState;
   dispatch: React.Dispatch<TeachAction>;
   showToast: (message: string) => void;
+  gaps: TeachGap[];
+  onFix: (id: string) => void;
 }) {
   const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved);
   const resolvedContradictions = state.contradictions.filter((c) => c.resolved);
 
   const [focus, setFocus] = useState(0);
+  const [reviewing, setReviewing] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReviewing(false), 1400);
+    return () => window.clearTimeout(timer);
+  }, []);
   const open = unresolvedContradictions;
   const index = open.length === 0 ? 0 : Math.min(focus, open.length - 1);
   const current = open[index];
 
-  if (!current && resolvedContradictions.length === 0) {
+  if (reviewing) {
     return (
-      <p className="max-w-xl text-base leading-relaxed text-piloteer-metal">
-        Nothing conflicts with what you have entered.
-      </p>
+      <div className="flex h-full items-center">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-piloteer-signal" />
+            <p className="text-lg font-semibold">Hunter is reviewing what you entered.</p>
+          </div>
+          <p className="mt-2 text-sm text-piloteer-metal">Looking for gaps across products, buyers, and the playbook.</p>
+        </div>
+      </div>
     );
+  }
+
+  if (!current && resolvedContradictions.length === 0) {
+    return <OpenGaps gaps={gaps} onFix={onFix} />;
   }
 
   if (!current) {
     return (
-      <ul className="max-w-xl">
-        {resolvedContradictions.map((contradiction) => (
-          <li key={contradiction.id} className="flex items-center justify-between gap-6 border-t border-piloteer-hair py-5">
-            <span className="font-semibold">{contradiction.title}</span>
-            <span className="font-mono text-[11px] uppercase tracking-widest text-piloteer-verified">
-              {contradiction.resolution === 'option1' ? 'A' : 'B'}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="flex h-full min-h-0 flex-col gap-4">
+        <ul className="shrink-0">
+          {resolvedContradictions.map((contradiction) => (
+            <li key={contradiction.id} className="flex items-center justify-between gap-6 border-t border-piloteer-hair py-2.5">
+              <span className="text-sm font-semibold">{contradiction.title}</span>
+              <span className="font-mono text-[11px] uppercase tracking-widest text-piloteer-verified">
+                {contradiction.resolution === 'option1' ? 'A' : 'B'}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="min-h-0 flex-1">
+          <OpenGaps gaps={gaps} onFix={onFix} />
+        </div>
+      </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-12">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-3 flex shrink-0 items-center gap-1.5">
         {state.contradictions.map((contradiction) => (
           <span
             key={contradiction.id}
@@ -2210,31 +2378,121 @@ function GapsContradictionsStep({
           />
         ))}
       </div>
-      <h2 className="max-w-3xl text-3xl font-bold tracking-editorial leading-tight">{current.title}</h2>
-      <p className="mt-5 max-w-2xl text-piloteer-metal leading-relaxed">{current.description}</p>
-      <div className="mt-10 grid grid-cols-2 gap-4 max-w-4xl">
+      <h2 className="shrink-0 font-disp text-2xl font-bold leading-tight tracking-editorial">{current.title}</h2>
+      <p className="mt-2 max-w-3xl shrink-0 text-sm leading-relaxed text-piloteer-metal">{current.description}</p>
+      <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 gap-3">
         <button
+          type="button"
           onClick={() => {
             dispatch({ type: 'RESOLVE_CONTRADICTION', contradictionId: current.id, resolution: 'option1' });
             showToast('Conflict resolved');
             setFocus(0);
           }}
-          className="min-h-[200px] rounded-3xl bg-piloteer-surface p-8 text-left hover:bg-piloteer-ink hover:text-piloteer-void transition-colors group"
+          className="teach-panel p-5 text-left transition-colors hover:border-piloteer-signal"
         >
-          <div className="text-sm font-semibold text-piloteer-metal group-hover:text-piloteer-void/80">A</div>
-          <p className="mt-8 text-lg font-semibold leading-snug">{current.option1}</p>
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-signal">Option A</div>
+          <p className="mt-3 text-lg font-semibold leading-snug">{current.option1}</p>
         </button>
         <button
+          type="button"
           onClick={() => {
             dispatch({ type: 'RESOLVE_CONTRADICTION', contradictionId: current.id, resolution: 'option2' });
             showToast('Conflict resolved');
             setFocus(0);
           }}
-          className="min-h-[200px] rounded-3xl bg-piloteer-surface p-8 text-left hover:bg-piloteer-ink hover:text-piloteer-void transition-colors group"
+          className="teach-panel p-5 text-left transition-colors hover:border-piloteer-signal"
         >
-          <div className="text-sm font-semibold text-piloteer-metal group-hover:text-piloteer-void/80">B</div>
-          <p className="mt-8 text-lg font-semibold leading-snug">{current.option2}</p>
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-signal">Option B</div>
+          <p className="mt-3 text-lg font-semibold leading-snug">{current.option2}</p>
         </button>
+      </div>
+    </div>
+  );
+}
+
+type TeachGap = { id: string; label: string; done: boolean };
+
+function OpenGaps({ gaps, onFix }: { gaps: TeachGap[]; onFix: (id: string) => void }) {
+  const open = gaps.filter((gap) => !gap.done);
+  if (open.length === 0) {
+    return (
+      <div className="flex h-full items-center">
+        <p className="font-disp text-2xl font-bold tracking-editorial">Nothing conflicts with what you have entered.</p>
+      </div>
+    );
+  }
+  const rows = Math.ceil(open.length / 2);
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <h1 className="shrink-0 text-[26px] font-bold leading-tight tracking-editorial">Review gaps</h1>
+      <p className="mt-1 shrink-0 text-xs text-piloteer-mute">These are still open. Open one to fill it in.</p>
+      <ul
+        className="mt-3 grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-y-auto"
+        style={{ gridTemplateRows: `repeat(${rows}, minmax(52px, 1fr))` }}
+      >
+        {open.map((gap) => (
+          <li key={gap.id} className="flex h-full items-center justify-between gap-4 rounded-xl border border-piloteer-hair bg-piloteer-surface px-4">
+            <span className="truncate text-sm font-semibold">{gap.label}</span>
+            <button type="button" onClick={() => onFix(gap.id)} className="shrink-0 text-xs font-semibold text-piloteer-signal">Fix</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function learningReport(state: TeachState) {
+  const company = state.companyOverview;
+  const steps = [
+    { label: 'Industry', askId: 'industry', done: Boolean(company.industry) },
+    { label: 'Who you sell to', askId: 'segment', done: company.customerSegment.length > 0 },
+    { label: 'Deal size', askId: 'deal-size', done: Boolean(company.typicalDealSize) },
+    { label: 'Sales cycle', askId: 'cycle', done: Boolean(company.typicalSalesCycle) },
+    { label: 'Website', askId: 'website', done: Boolean(company.website.trim()) },
+    { label: 'Deal stages', askId: 'stages', done: state.dealStages.length >= 3 },
+    { label: 'Sales framework', askId: 'framework', done: Boolean(state.salesFramework) },
+  ];
+  const productScores = state.products.filter((product) => product.name.trim()).map((product) => {
+    const askId = (screen: string) => (product.sample ? undefined : `${screen}-${product.id}`);
+    const parts = [
+      { label: 'Sources', askId: askId('sources'), done: product.sources.length > 0 || product.description.trim().length > 20 },
+      { label: 'Buyers', askId: askId('buyers'), done: product.personas.length > 0 },
+      { label: 'Playbook', askId: askId('playbook'), done: product.keyQuestions.length + product.keyObjectives.length + product.differentiators.length + product.objections.length > 0 },
+      { label: 'Competitors', askId: askId('competitors'), done: product.competitors.length > 0 },
+      { label: 'Market', askId: askId('market'), done: product.buyerEnvironment.length + product.companyProductEnvironment.length + product.dealEnvironmentSignals.length > 0 },
+    ];
+    const score = Math.round((parts.filter((part) => part.done).length / parts.length) * 100);
+    return { product, parts, score };
+  });
+  const counted = productScores.filter((item) => !item.product.sample);
+  const bits = [...steps.map((step) => step.done), ...counted.flatMap((item) => item.parts.map((part) => part.done))];
+  const percent = bits.length === 0 ? 0 : Math.round((bits.filter(Boolean).length / bits.length) * 100);
+  return { percent, steps, productScores };
+}
+
+function teachGaps(state: TeachState): TeachGap[] {
+  const report = learningReport(state);
+  return [
+    ...report.steps.map((step) => ({ id: step.askId, label: step.label, done: step.done })),
+    ...report.productScores
+      .filter((item) => !item.product.sample)
+      .flatMap(({ product, parts }) =>
+        parts.flatMap((part) => (part.askId ? [{ id: part.askId, label: `${product.name} · ${part.label}`, done: part.done }] : []))
+      ),
+  ];
+}
+
+function ScoreRing({ percent, size = 148, label = 'Learned' }: { percent: number; size?: number; label?: string }) {
+  const ring = Math.max(10, Math.round(size * 0.08));
+  return (
+    <div
+      className="relative flex shrink-0 items-center justify-center rounded-full"
+      style={{ width: size, height: size, background: `conic-gradient(#5BC08D ${percent * 3.6}deg, #1c1c22 0deg)` }}
+      aria-hidden="true"
+    >
+      <div className="flex flex-col items-center justify-center rounded-full bg-piloteer-void" style={{ width: size - ring * 2, height: size - ring * 2 }}>
+        <span className="font-disp text-3xl font-bold leading-none tracking-editorial">{percent}%</span>
+        <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-piloteer-mute">{label}</span>
       </div>
     </div>
   );
@@ -2242,91 +2500,250 @@ function GapsContradictionsStep({
 
 function VisibilityGoLiveStep({
   state,
-  dispatch,
-  showToast,
+  onReviewGaps,
+  onOpenAsk,
 }: {
   state: TeachState;
-  dispatch: React.Dispatch<TeachAction>;
-  showToast: (message: string) => void;
+  onReviewGaps: () => void;
+  onOpenAsk: (id: string) => void;
 }) {
-  const allProductsComplete = state.products.every(
-    (p) =>
-      p.description.length > 20 &&
-      p.personas.length > 0 &&
-      p.keyQuestions.length > 0 &&
-      p.competitors.length > 0 &&
-      // Use completedSections for accurate completion tracking
-      p.completedSections.about &&
-      p.completedSections.personas &&
-      p.completedSections.keySignals &&
-      p.completedSections.competitive &&
-      p.completedSections.marketInfo
-  );
-
-  const unresolvedContradictions = state.contradictions.filter((c) => !c.resolved).length;
-
-  const canGoLive = state.visibility.sensing && allProductsComplete && unresolvedContradictions === 0;
+  const report = learningReport(state);
+  const ready = report.percent >= 80;
+  const next = [
+    ['1', 'Piloteer configures your account', 'We set up your environment from what you entered.'],
+    ['2', 'Add your team', 'Invite managers and reps, and set their access.'],
+    ['3', 'Download the console', 'Get Hunter Console onto the devices sellers use.'],
+    ['4', 'Go live with Hunter', 'Sellers start getting guidance in the conversation.'],
+  ];
 
   return (
-    <div>
-      <div className="grid grid-cols-3 gap-4">
-        <button
-          onClick={() => {
-            dispatch({ type: 'TOGGLE_VISIBILITY', field: 'sensing' });
-            showToast(state.visibility.sensing ? 'Sensing disabled' : 'Sensing enabled');
-          }}
-          className={`min-h-[168px] rounded-3xl p-6 text-left flex flex-col justify-between transition-colors ${
-            state.visibility.sensing ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink'
-          }`}
-        >
-          <span className="text-lg font-semibold">Real-time Sensing</span>
-          <span className={`relative w-11 h-6 rounded-full ${state.visibility.sensing ? 'bg-piloteer-void/30' : 'bg-piloteer-hair-2'}`}>
-            <span className={`absolute top-1 h-4 w-4 rounded-full transition-all ${state.visibility.sensing ? 'left-6 bg-piloteer-void' : 'left-1 bg-piloteer-mute'}`} />
-          </span>
-        </button>
-        <button
-          onClick={() => {
-            dispatch({ type: 'TOGGLE_VISIBILITY', field: 'writeback' });
-            showToast(state.visibility.writeback ? 'Writeback disabled' : 'Writeback enabled');
-          }}
-          className={`min-h-[168px] rounded-3xl p-6 text-left flex flex-col justify-between transition-colors ${
-            state.visibility.writeback ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink'
-          }`}
-        >
-          <span className="text-lg font-semibold">CRM Writeback</span>
-          <span className={`relative w-11 h-6 rounded-full ${state.visibility.writeback ? 'bg-piloteer-void/30' : 'bg-piloteer-hair-2'}`}>
-            <span className={`absolute top-1 h-4 w-4 rounded-full transition-all ${state.visibility.writeback ? 'left-6 bg-piloteer-void' : 'left-1 bg-piloteer-mute'}`} />
-          </span>
-        </button>
-        <button
-          onClick={() => {
-            dispatch({ type: 'TOGGLE_VISIBILITY', field: 'noMonitorCommitment' });
-            showToast(state.visibility.noMonitorCommitment ? 'No-monitor disabled' : 'No-monitor enabled');
-          }}
-          className={`min-h-[168px] rounded-3xl p-6 text-left flex flex-col justify-between transition-colors ${
-            state.visibility.noMonitorCommitment ? 'bg-piloteer-ink text-piloteer-void' : 'bg-piloteer-surface text-piloteer-ink'
-          }`}
-        >
-          <span className="text-lg font-semibold">No-Monitor Commitment</span>
-          <span className={`relative w-11 h-6 rounded-full ${state.visibility.noMonitorCommitment ? 'bg-piloteer-void/30' : 'bg-piloteer-hair-2'}`}>
-            <span className={`absolute top-1 h-4 w-4 rounded-full transition-all ${state.visibility.noMonitorCommitment ? 'left-6 bg-piloteer-void' : 'left-1 bg-piloteer-mute'}`} />
-          </span>
-        </button>
+    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
+      <div className="flex items-center gap-5">
+        <ScoreRing percent={report.percent} size={104} label="Ready" />
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-piloteer-signal">Overall readiness</p>
+          <h1 className="mt-1 font-disp text-[26px] font-bold leading-none tracking-editorial">
+            {ready ? 'Ready to launch Hunter' : 'Hunter has a first read.'}
+          </h1>
+          <p className="mt-1.5 max-w-2xl truncate text-sm text-piloteer-metal">
+            {ready
+              ? 'Strong enough to launch. Real-time sensing stays on. Nothing goes live until you submit.'
+              : `${report.percent}% of the teaching is in. A few gaps can still sharpen guidance. Nothing goes live until you submit.`}
+          </p>
+        </div>
+        <button type="button" onClick={onReviewGaps} className="btn-secondary shrink-0">Review gaps</button>
       </div>
 
-      <div className="mt-14 flex gap-10">
-        <div className="flex items-center gap-3">
-          <span className={`w-2 h-2 rounded-full ${state.visibility.sensing ? 'bg-piloteer-verified' : 'bg-piloteer-hair-2'}`} />
-          <span className="text-sm font-semibold">Sensing</span>
+      <div className="grid min-h-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3">
+        <section className="teach-panel p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-mute">Company</h2>
+          <ul className="mt-2 min-h-0 flex-1 overflow-y-auto">
+            {report.steps.map((step) => (
+              <li key={step.askId}>
+                <button
+                  type="button"
+                  onClick={() => onOpenAsk(step.askId)}
+                  className="flex w-full items-center gap-3 border-t border-piloteer-hair py-2 text-left hover:text-piloteer-signal"
+                >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${step.done ? 'bg-piloteer-verified' : 'bg-piloteer-signal'}`} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{step.label}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-widest ${step.done ? 'text-piloteer-verified' : 'text-piloteer-mute'}`}>
+                    {step.done ? 'In' : 'Open'}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="flex min-h-0 flex-col gap-3">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+            {report.productScores.map(({ product, parts, score }) => (
+              <div key={product.id} className="rounded-2xl border border-piloteer-hair bg-piloteer-surface px-4 py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-piloteer-mute">{product.sample ? 'Sample' : 'Product'}</p>
+                    <p className="truncate font-disp text-lg font-bold">{product.name}</p>
+                  </div>
+                  <p className="font-disp text-2xl font-bold">{score}%</p>
+                </div>
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-piloteer-void">
+                  <div className={`h-full rounded-full ${score >= 80 ? 'bg-piloteer-verified' : 'bg-piloteer-signal'}`} style={{ width: `${score}%` }} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {parts.map((part) => (
+                    part.done || !part.askId ? (
+                      <span key={part.label} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${part.done ? 'bg-piloteer-verified-soft text-piloteer-verified' : 'bg-piloteer-void text-piloteer-mute'}`}>
+                        {part.label}
+                      </span>
+                    ) : (
+                      <button key={part.label} type="button" onClick={() => onOpenAsk(part.askId!)} className="rounded-full bg-piloteer-void px-2 py-0.5 text-[11px] font-semibold text-piloteer-signal hover:text-piloteer-ink">
+                        Fix {part.label}
+                      </button>
+                    )
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid shrink-0 grid-cols-4 gap-2">
+            {next.map(([n, title, detail]) => (
+              <div key={n} className="rounded-xl border border-piloteer-hair bg-piloteer-plane px-3 py-2.5">
+                <p className="font-mono text-[10px] text-piloteer-signal">{n}</p>
+                <p className="mt-1 text-xs font-semibold leading-snug">{title}</p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-piloteer-mute">{detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <p className="truncate text-xs text-piloteer-mute">
+        Your setup stays private. Sellers start and stop sensing. Leaders see patterns, not a live feed of someone else’s call.
+      </p>
+    </div>
+  );
+}
+
+function LaunchSequence({
+  percent,
+  phase,
+  onPhase,
+  onEnter,
+  onConsole,
+}: {
+  percent: number;
+  phase: 'configuring' | 'success' | 'team' | 'console';
+  onPhase: (phase: 'configuring' | 'success' | 'team' | 'console') => void;
+  onEnter: () => void;
+  onConsole: () => void;
+}) {
+  const [tick, setTick] = useState(0);
+  const [people, setPeople] = useState<{ name: string; email: string; role: string }[]>([]);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('Sales rep');
+  const lines = [
+    'Reading your products and buyers',
+    'Turning sensing on',
+    'Writing the sales playbook',
+    'Preparing Hunter Console',
+  ];
+
+  useEffect(() => {
+    if (phase !== 'configuring') return;
+    const timer = window.setInterval(() => setTick((current) => current + 1), 900);
+    return () => window.clearInterval(timer);
+  }, [phase]);
+
+  if (phase === 'configuring') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="w-full max-w-md">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-piloteer-signal">Configuring</p>
+          <h1 className="mt-2 font-disp text-[28px] font-bold tracking-editorial">Piloteer is configuring Hunter.</h1>
+          <ul className="mt-5 space-y-2">
+            {lines.map((line, index) => (
+              <li key={line} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${index <= tick ? 'bg-piloteer-surface text-piloteer-ink' : 'text-piloteer-mute'}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${index <= tick ? 'bg-piloteer-signal shadow-[0_0_8px_#FF5C5C]' : 'bg-piloteer-hair'}`} />
+                {line}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`w-2 h-2 rounded-full ${allProductsComplete ? 'bg-piloteer-verified' : 'bg-piloteer-hair-2'}`} />
-          <span className="text-sm font-semibold">Products</span>
+      </div>
+    );
+  }
+
+  if (phase === 'success') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="grid w-full max-w-3xl items-center gap-8 grid-cols-[auto_minmax(0,1fr)]">
+          <ScoreRing percent={percent} size={148} />
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-piloteer-verified">Configured</p>
+            <h1 className="mt-2 font-disp text-[32px] font-bold leading-none tracking-editorial">Hunter is configured.</h1>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-piloteer-metal">{percent}% of the teaching is in the account. Nothing is live for the team until you invite them and they open Console.</p>
+            <button type="button" onClick={() => onPhase('team')} className="btn-primary mt-5">Add your team</button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`w-2 h-2 rounded-full ${unresolvedContradictions === 0 ? 'bg-piloteer-verified' : 'bg-piloteer-watch'}`} />
-          <span className="text-sm font-semibold">{unresolvedContradictions === 0 ? 'No conflicts' : `${unresolvedContradictions} conflicts`}</span>
+      </div>
+    );
+  }
+
+  if (phase === 'team') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="grid w-full max-w-4xl grid-cols-2 gap-8">
+          <div>
+            <h1 className="font-disp text-[28px] font-bold tracking-editorial">Add your team</h1>
+            <p className="mt-2 text-sm text-piloteer-metal">These are the people who sell. Prospects stay in the CRM.</p>
+            <form
+              className="mt-5 space-y-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!name.trim() || !email.trim()) return;
+                setPeople((current) => [...current, { name: name.trim(), email: email.trim(), role }]);
+                setName('');
+                setEmail('');
+              }}
+            >
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Name" aria-label="Name" className="teach-field" />
+              <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" aria-label="Email" className="teach-field" />
+              <select value={role} onChange={(event) => setRole(event.target.value)} aria-label="Role" className="teach-field">
+                <option>Sales rep</option>
+                <option>Sales manager</option>
+              </select>
+              <button type="submit" className="btn-secondary">Send invite</button>
+            </form>
+          </div>
+          <div className="teach-panel p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-piloteer-mute">Invited</p>
+            <ul className="mt-2 min-h-0 flex-1 overflow-y-auto">
+              {people.length === 0 && <li className="py-6 text-sm text-piloteer-mute">No one invited yet.</li>}
+              {people.map((person) => (
+                <li key={person.email} className="border-t border-piloteer-hair py-2 text-sm">
+                  <span className="font-semibold">{person.name}</span>
+                  <span className="text-piloteer-metal"> · {person.role}</span>
+                </li>
+              ))}
+            </ul>
+            <button type="button" onClick={() => onPhase('console')} className="btn-primary mt-3 self-start">Download the console</button>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="w-full max-w-xl">
+      <h1 className="font-disp text-[28px] font-bold tracking-editorial">Download the console</h1>
+      <p className="mt-2 text-sm text-piloteer-metal">Hunter Console is where a seller starts, pauses, and stops sensing. Live guidance stays on their device.</p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            const file = new Blob(
+              ['Hunter Console\n\nPut this on the devices your sellers use.\nSellers start, pause, and stop sensing. Live guidance stays on their device.\n'],
+              { type: 'text/plain;charset=utf-8' },
+            );
+            const url = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Hunter-Console.txt';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+          }}
+          className="btn-primary"
+        >
+          Download Console
+        </button>
+        <button type="button" onClick={onConsole} className="btn-secondary">Open Console</button>
+        <button type="button" onClick={onEnter} className="btn-ghost">Go to your book</button>
+      </div>
       </div>
     </div>
   );

@@ -94,4 +94,12 @@
   .eyebrow {
     @apply font-mono text-xs uppercase tracking-widest text-piloteer-mute;
   }
+
+  .teach-panel {
+    @apply flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-piloteer-hair bg-piloteer-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
+  }
+
+  .teach-field {
+    @apply w-full rounded-xl border border-piloteer-hair bg-piloteer-void/80 px-3 py-2 text-sm text-piloteer-ink outline-none transition-colors placeholder:text-piloteer-faint focus:border-piloteer-signal;
+  }
 }

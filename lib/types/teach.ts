@@ -25,6 +25,12 @@ export interface Persona {
   name: string;
   role: string;
   notes: string;
+  titles: string;
+  owns: string;
+  accomplish: string;
+  matters: string;
+  hesitate: string;
+  signals: string;
 }
 
 export interface Differentiator {
@@ -43,6 +49,11 @@ export interface Competitor {
   id: string;
   name: string;
   profile: string;
+  whyChoose: string;
+  fallShort: string;
+  emphasize: string;
+  objection: string;
+  response: string;
 }
 
 export interface ComparisonAdvantage {
@@ -139,6 +150,7 @@ export type TeachStepId =
   | 'products'
   | 'deal-stages'
   | 'sales-framework'
+  | 'how-you-sell'
   | 'product-about'
   | 'product-personas'
   | 'product-key-signals'

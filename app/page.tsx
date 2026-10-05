@@ -6,6 +6,7 @@ import { MomentumBar, MomentumFigure } from '@/components/MomentumVisuals';
 import { mockDeals } from '@/lib/data/mockData';
 import { bookNet, interpret } from '@/lib/momentum';
 import { personaOrder, personas, usePersona, type PersonaId } from '@/lib/persona';
+import { isTeachComplete } from '@/lib/teachGate';
 
 export default function Home() {
   const router = useRouter();
@@ -20,6 +21,10 @@ export default function Home() {
 
   const enter = (id: PersonaId) => {
     setPersona(id);
+    if (id === 'leader' && !isTeachComplete()) {
+      router.push('/settings/teach');
+      return;
+    }
     router.push(personas[id].home);
   };
 

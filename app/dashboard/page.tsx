@@ -17,6 +17,7 @@ import {
   sellerPatterns,
 } from '@/lib/data/mockData';
 import { useDealPane } from '@/lib/dealPane';
+import { usePersona } from '@/lib/persona';
 import { NeedsYouItem, Pattern } from '@/lib/types/domain';
 
 const DANCE = {
@@ -32,8 +33,9 @@ const LENSES = [
 ] as const;
 
 export default function SellerDashboard() {
-  const deals = mockDeals.filter((deal) => deal.ownerId === 'emma');
-  const queueSource = needsYouItems.filter((item) => item.deal.ownerId === 'emma');
+  const { persona } = usePersona();
+  const deals = persona?.id === 'rep' ? mockDeals.filter((deal) => deal.ownerId === 'emma') : [];
+  const queueSource = needsYouItems.filter((item) => persona?.id === 'rep' && item.deal.ownerId === 'emma');
   const [queue, setQueue] = useState(queueSource);
   const [index, setIndex] = useState(0);
   const [patternTab, setPatternTab] = useState<'seller' | 'buyer' | 'buyer-seller' | 'market'>('seller');
@@ -63,12 +65,22 @@ export default function SellerDashboard() {
   return (
     <DashboardNav>
       <div className="mx-auto max-w-6xl space-y-16 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <BookHero
-          eyebrow="Performance · your book"
-          kicker="Four active deals, weighted by value. This is the book’s position, not a grade on you."
-          deals={deals}
-          compareNote="Compared with this book’s own readings. Nobody else’s."
-        />
+        {deals.length > 0 ? (
+          <BookHero
+            eyebrow="Me · your book"
+            kicker="Deals you own, weighted by value. This is the book’s position, not a grade on you."
+            deals={deals}
+            compareNote="Compared with this book’s own readings. Nobody else’s."
+          />
+        ) : (
+          <section>
+            <p className="eyebrow">Me · your book</p>
+            <h1 className="mt-3 max-w-xl text-4xl font-bold tracking-editorial sm:text-5xl">Your deals live here.</h1>
+            <p className="mt-4 max-w-xl text-piloteer-metal">
+              {persona?.name} sells too. This screen is that personal book. The team book and the company book stay on their own screens, and nothing here ranks people.
+            </p>
+          </section>
+        )}
 
         <section>
           <div className="flex items-end justify-between gap-4">
@@ -117,6 +129,7 @@ export default function SellerDashboard() {
           )}
         </section>
 
+        {deals.length > 0 && <>
         <section>
           <p className="eyebrow">The book</p>
           <h2 className="mt-2 text-3xl font-bold">Every deal on one axis.</h2>
@@ -181,6 +194,7 @@ export default function SellerDashboard() {
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-piloteer-metal">{activeLens.copy}</p>
           <p className="mt-4 text-sm"><span className="text-piloteer-mute">Next focus · </span>{focus}</p>
         </section>
+        </>}
       </div>
       {note && (
         <button type="button" onClick={() => setNote(null)} className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-piloteer-ink px-4 py-2 text-sm font-semibold text-piloteer-void">

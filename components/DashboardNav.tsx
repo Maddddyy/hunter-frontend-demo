@@ -8,6 +8,7 @@ import { NavIcons } from './icons';
 import DealPane from './DealPane';
 import { useDealPane } from '@/lib/dealPane';
 import { allows, personaOrder, personas, usePersona, type PersonaId } from '@/lib/persona';
+import { isTeachComplete, TEACH_COMPLETE_EVENT } from '@/lib/teachGate';
 
 export default function DashboardNav({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -45,16 +46,37 @@ function AppShell({
   personaId: PersonaId;
   pathname: string | null;
 }) {
+  const router = useRouter();
   const [navOpen, setNavOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [asked, setAsked] = useState<{ q: string; a: string }[]>([]);
+  const [teachChecked, setTeachChecked] = useState(false);
+  const [teachComplete, setTeachComplete] = useState(false);
   const { dealId } = useDealPane();
   const persona = personas[personaId];
+  const teachLocked = personaId === 'leader' && teachChecked && !teachComplete;
 
   useEffect(() => {
     setNavOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const sync = () => setTeachComplete(isTeachComplete());
+    sync();
+    setTeachChecked(true);
+    window.addEventListener(TEACH_COMPLETE_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(TEACH_COMPLETE_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!teachLocked || !pathname || pathname.startsWith('/settings/teach')) return;
+    router.replace('/settings/teach');
+  }, [teachLocked, pathname, router]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -70,20 +92,17 @@ function AppShell({
   const navItems =
     personaId === 'leader'
       ? [
-          { label: 'Company', href: '/dashboard/cro', Icon: NavIcons.Dashboard },
+          { label: 'Me', href: '/dashboard', Icon: NavIcons.Me },
+          { label: 'Deals', href: '/dashboard/deals', Icon: NavIcons.Deals },
+          { label: 'Teams', href: '/dashboard/manager', Icon: NavIcons.Team },
+          { label: 'Company', href: '/dashboard/cro', Icon: NavIcons.Company },
           { label: 'Settings', href: '/settings', Icon: NavIcons.Settings },
         ]
-      : personaId === 'manager'
-        ? [
-            { label: 'Team', href: '/dashboard/manager', Icon: NavIcons.Dashboard },
-            { label: 'Deals', href: '/dashboard/deals', Icon: NavIcons.Reports },
-            { label: 'Settings', href: '/settings', Icon: NavIcons.Settings },
-          ]
-        : [
-            { label: 'Performance', href: '/dashboard', Icon: NavIcons.Dashboard },
-            { label: 'Deals', href: '/dashboard/deals', Icon: NavIcons.Reports },
-            { label: 'Settings', href: '/settings', Icon: NavIcons.Settings },
-          ];
+      : [
+          { label: 'Me', href: '/dashboard', Icon: NavIcons.Me },
+          { label: 'Deals', href: '/dashboard/deals', Icon: NavIcons.Deals },
+          { label: 'Team', href: '/dashboard/manager', Icon: NavIcons.Team },
+        ];
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === href;
@@ -116,13 +135,21 @@ function AppShell({
     setQuestion('');
   };
 
+  if (personaId === 'leader' && !teachChecked) {
+    return <div className="min-h-screen bg-piloteer-void" />;
+  }
+
+  if (teachLocked) {
+    return <div className="h-screen overflow-hidden bg-piloteer-void text-piloteer-ink">{children}</div>;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-piloteer-void text-piloteer-ink">
       {navOpen && (
         <button className="fixed inset-0 z-30 bg-black/50 lg:hidden" aria-label="Close navigation" onClick={() => setNavOpen(false)} />
       )}
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[232px] shrink-0 flex-col border-r border-piloteer-hair bg-piloteer-plane transition-transform lg:static lg:translate-x-0 ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Link href={persona.home} className="flex items-center gap-3 px-5 py-5">
+        <Link href={teachLocked ? '/settings/teach' : persona.home} className="flex items-center gap-3 px-5 py-5">
           <PiloteerLogo className="h-5 opacity-90" />
         </Link>
         <p className="px-5 pb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-piloteer-mute">Hunter</p>
@@ -130,12 +157,21 @@ function AppShell({
           {navItems.map((item) => {
             const Icon = item.Icon;
             const active = isActive(item.href);
+            const className = `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active ? 'bg-piloteer-surface-3 text-piloteer-ink' : 'text-piloteer-metal hover:bg-piloteer-surface-2 hover:text-piloteer-ink'}`;
+            if (teachLocked) {
+              return (
+                <span key={item.href} className={`${className} cursor-not-allowed opacity-40 hover:bg-transparent hover:text-piloteer-metal`} title="Finish Teach Hunter first">
+                  <Icon />
+                  {item.label}
+                </span>
+              );
+            }
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active ? 'bg-piloteer-surface-3 text-piloteer-ink' : 'text-piloteer-metal hover:bg-piloteer-surface-2 hover:text-piloteer-ink'}`}
+                className={className}
               >
                 <Icon />
                 {item.label}
@@ -143,9 +179,6 @@ function AppShell({
             );
           })}
         </nav>
-        <div className="border-t border-piloteer-hair p-3">
-          <PersonaMenu current={personaId} />
-        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -153,21 +186,20 @@ function AppShell({
           <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold lg:hidden" onClick={() => setNavOpen(true)} aria-label="Open navigation">
             Menu
           </button>
-          <p className="hidden min-w-0 truncate text-sm text-piloteer-metal sm:block">
-            <span className="font-semibold text-piloteer-ink">{persona.name}</span>
-            <span className="text-piloteer-mute"> · {persona.title}</span>
-          </p>
-          <button
+          <div className="ml-auto flex items-center gap-2">
+            <PersonaMenu current={personaId} compact />
+            <button
             type="button"
             onClick={() => setAskOpen((open) => !open)}
-            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-piloteer-hair bg-piloteer-surface-2 px-3 py-2 text-sm font-semibold hover:bg-piloteer-surface-3"
+            className="inline-flex items-center gap-2 rounded-lg border border-piloteer-hair bg-piloteer-surface-2 px-3 py-2 text-sm font-semibold hover:bg-piloteer-surface-3"
             aria-expanded={askOpen}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             Ask Hunter
-          </button>
+            </button>
+          </div>
         </header>
 
         <div className="relative min-h-0 flex-1">
@@ -217,7 +249,7 @@ function AppShell({
   );
 }
 
-function PersonaMenu({ current }: { current: PersonaId }) {
+function PersonaMenu({ current, compact = false }: { current: PersonaId; compact?: boolean }) {
   const router = useRouter();
   const { setPersona } = usePersona();
   const [open, setOpen] = useState(false);
@@ -227,6 +259,10 @@ function PersonaMenu({ current }: { current: PersonaId }) {
   const choose = (id: PersonaId) => {
     setPersona(id);
     setOpen(false);
+    if (id === 'leader' && !isTeachComplete()) {
+      router.push('/settings/teach');
+      return;
+    }
     router.push(personas[id].home);
   };
 
@@ -235,7 +271,7 @@ function PersonaMenu({ current }: { current: PersonaId }) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-piloteer-surface-2"
+        className={`flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-piloteer-surface-2 ${compact ? '' : 'w-full'}`}
         aria-expanded={open}
         aria-haspopup="menu"
       >
@@ -248,7 +284,7 @@ function PersonaMenu({ current }: { current: PersonaId }) {
       {open && (
         <>
           <button className="fixed inset-0 z-40 cursor-default" aria-label="Close role menu" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-14 left-0 z-50 w-[250px] rounded-2xl border border-piloteer-hair bg-piloteer-surface p-2 shadow-2xl" role="menu">
+          <div className={`absolute z-50 w-[250px] rounded-2xl border border-piloteer-hair bg-piloteer-surface p-2 shadow-2xl ${compact ? 'right-0 top-12' : 'bottom-14 left-0'}`} role="menu">
             <p className="px-3 pb-1 pt-2 font-mono text-[11px] uppercase tracking-widest text-piloteer-mute">Signed in as</p>
             {personaOrder.map((id) => {
               const option = personas[id];

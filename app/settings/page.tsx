@@ -5,7 +5,7 @@ import Link from 'next/link';
 import DashboardNav from '@/components/DashboardNav';
 import { usePersona } from '@/lib/persona';
 
-type SectionId = 'teach' | 'people' | 'trust' | 'calendar' | 'calls' | 'profile' | 'notifications';
+type SectionId = 'teach' | 'people' | 'calendar' | 'calls' | 'profile' | 'notifications';
 
 type Teammate = {
   id: string;
@@ -36,7 +36,6 @@ function SettingsBody() {
     ? [
         { id: 'teach', label: 'Teach Hunter' },
         { id: 'people', label: 'People' },
-        { id: 'trust', label: 'Trust' },
         { id: 'calendar', label: 'Calendar' },
         { id: 'profile', label: 'Profile' },
         { id: 'notifications', label: 'Notifications' },
@@ -74,7 +73,6 @@ function SettingsBody() {
       <div className="mt-8 max-w-3xl">
         {active === 'teach' && <TeachSection />}
         {active === 'people' && <PeopleSection />}
-        {active === 'trust' && <TrustSection />}
         {active === 'calendar' && <CalendarSection email={persona.email} />}
         {active === 'calls' && <CallsSection />}
         {active === 'profile' && <ProfileSection name={persona.name} email={persona.email} title={persona.title} />}
@@ -201,31 +199,6 @@ function PeopleSection() {
               <div className="text-sm font-semibold">{person.role}</div>
               <div className="text-xs font-mono uppercase tracking-wider text-piloteer-mute mt-1">{person.status}</div>
             </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function TrustSection() {
-  return (
-    <section>
-      <div className="eyebrow mb-3">Visibility</div>
-      <h1 className="text-4xl font-bold interp">Trust</h1>
-      <p className="mt-4 text-lg text-piloteer-metal max-w-2xl leading-relaxed">
-        Sellers start sensing themselves. Leaders see patterns, not a live feed of someone else’s call.
-      </p>
-      <ul className="mt-10 space-y-0">
-        {[
-          ['Seller', 'Starts, pauses, and stops sensing. Live guidance stays on their Console.'],
-          ['Sales manager', 'Deal evidence, commitments, and team patterns. No moment-by-moment tips.'],
-          ['Revenue leader', 'Company patterns, revenue friction, and what to change. Not individual tip history.'],
-          ['Writeback', 'Follow-up and CRM drafts wait for the seller to approve.'],
-        ].map(([title, body]) => (
-          <li key={title} className="border-t border-piloteer-hair py-5">
-            <h2 className="font-semibold">{title}</h2>
-            <p className="mt-1 text-sm text-piloteer-metal leading-relaxed">{body}</p>
           </li>
         ))}
       </ul>
